@@ -1,0 +1,479 @@
+<html>
+
+<head>
+<title>CS455 Project 2</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="webgl-utils.js"></script>
+
+<script id="shader-fs" type="x-shader/x-fragment">
+    precision mediump float;
+    varying vec2 vTextureCoord;
+    uniform sampler2D uSampler;
+    void main(void) {
+        gl_FragColor = texture2D(uSampler, vec2(vTextureCoord.s, vTextureCoord.t));
+    }
+
+</script>
+
+<script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    attribute vec2 aTextureCoord;
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+    varying vec2 vTextureCoord;
+    void main(void) {
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+        vTextureCoord = aTextureCoord;
+    }
+
+</script>
+
+
+<script type="text/javascript">
+    
+
+
+    var gl;
+    function initGL(canvas) {
+        try {
+            gl = canvas.getContext("experimental-webgl");
+            gl.viewportWidth = canvas.width;
+            gl.viewportHeight = canvas.height;
+        }
+ catch (e) {
+        }
+
+        if (!gl) {
+            alert("Could not initialise WebGL, sorry :-(");
+        }
+
+    }
+
+    function getShader(gl, id) {
+        var shaderScript = document.getElementById(id);
+        if (!shaderScript) {
+            return null;
+        }
+
+        var str = "";
+        var k = shaderScript.firstChild;
+        while (k) {
+            if (k.nodeType == 3) {
+                str += k.textContent;
+            }
+
+            k = k.nextSibling;
+        }
+
+        var shader;
+        if (shaderScript.type == "x-shader/x-fragment") {
+            shader = gl.createShader(gl.FRAGMENT_SHADER);
+        } else if (shaderScript.type == "x-shader/x-vertex") {
+            shader = gl.createShader(gl.VERTEX_SHADER);
+        } else {
+            return null;
+        }
+
+        gl.shaderSource(shader, str);
+        gl.compileShader(shader);
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader));
+            return null;
+        }
+
+        return shader;
+    }
+
+    var shaderProgram;
+    function initShaders() {
+        var fragmentShader = getShader(gl, "shader-fs");
+        var vertexShader = getShader(gl, "shader-vs");
+        shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+
+        gl.useProgram(shaderProgram);
+        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+        shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
+        gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
+        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
+        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+        shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
+    }
+    
+    //There could possibly be a race condition (I dont know JS well enough). This prevents it (for two threads).
+    var settingUpTexture=false;
+    
+    function handleLoadedTexture(texture) {
+        
+        while (settingUpTexture);//wait
+        
+        //console.log("setting up texture " + texture.imgName);
+        settingUpTexture=true;//lock
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+        
+        //These parameters supposedly allow NPOT texture sizes (which my box image is)
+        //http://stackoverflow.com/questions/3792027/webgl-and-the-power-of-two-image-size
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        //gl.texEnvf()?
+        
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        settingUpTexture=false;//unlock
+    }
+
+
+    
+    //This returns the texture object, though there is no garintee it will be loaded
+    //It defaults to a blue texture.
+    function getTexture(imgName) {
+        var texture = gl.createTexture();
+        texture.image = new Image();
+        texture.imgName = imgName;
+        texture.image.onload = function () {
+            handleLoadedTexture(texture)
+        }
+        //default, I couldn't get this to work :(
+        /*gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
+        
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);//maybe LINEAR?
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.bindTexture(gl.TEXTURE_2D, null);*/
+        
+        texture.image.src = imgName;
+        
+        
+        
+        return texture;
+    }
+    
+    
+    function initTexturedObject(imgName,objName,toFill) {
+        toFill.texture = getTexture(imgName);
+        
+        toFill.vertexPositionBuffer=null;
+        toFill.vertexTextureCordBuffer=null;
+        toFill.vertexIndexBuffer=null;
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/"+objName, true);
+        xhr.onload = function (e) {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              //console.log(xhr.responseText);
+              var objFile=xhr.responseText
+              initBuffer(toFill,objFile);
+            } else {
+              console.error(xhr.statusText);
+            }
+          }
+        };
+        xhr.onerror = function (e) {
+          console.error(xhr.statusText);
+        };
+        xhr.send(null);
+        
+        
+              
+    }
+
+    var mvMatrix = mat4.create();
+    var mvMatrixStack = [];
+    var pMatrix = mat4.create();
+    function mvPushMatrix() {
+        var copy = mat4.create();
+        mat4.set(mvMatrix, copy);
+        mvMatrixStack.push(copy);
+    }
+
+    function mvPopMatrix() {
+        if (mvMatrixStack.length == 0) {
+            throw "Invalid popMatrix!";
+        }
+
+        mvMatrix = mvMatrixStack.pop();
+    }
+
+var logger =0;
+    function setMatrixUniforms() {
+        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
+        
+        if (logger++>100) {
+            	//console.log(perspectiveMat);
+            	console.log('pMatrix');
+            	console.log(pMatrix);
+            	console.log('mvMatrix');
+            	console.log(mvMatrix);
+            	logger=0;
+            }
+    }
+
+    function degToRad(degrees) {
+        return degrees * Math.PI / 180;
+    }
+
+    
+    
+    
+    
+    
+    function initBuffer(toFill, file) {
+        var lines = file.split('\n');
+        var countVertices;
+        var vertices = [];
+        var textureCoords = [];
+        var faces = [];
+        
+        //parse obj file
+        for (var line of lines) {
+        	var tokens = line.split(' ');
+        	if (tokens[0] === 'v') {
+        	    vertices.push([parseFloat(tokens[1]), parseFloat(tokens[2]), parseFloat(tokens[3])]);
+        	    //console.log("vertex: " + vertices[vertices.length-1][0] + "," + vertices[vertices.length-1][1] + "," + vertices[vertices.length-1][2]);
+        	    countVertices++;
+        	} else if (tokens[0] === 'vt') {
+        	    textureCoords.push([parseFloat(tokens[1]), parseFloat(tokens[2])]);
+        	    //console.log("textureCord: " + textureCoords[textureCoords.length-1][0] + "," + textureCoords[textureCoords.length-1][1]);
+        	} else if (tokens[0] === 'f') {
+        	    tokens.shift();
+        	    //console.log(tokens);
+        	    var face=[];
+        	    
+        	    for (var vertex of tokens) {
+        	        face.push(vertex);
+        	        //console.log("vertex: ".concat(vertex));
+        	    }
+        	    faces.push(face);
+        	    //console.log("face: " + faces[faces.length-1][0]);
+        	}
+        }
+        
+        //Next we recreate the vertexes for each one in each triangle we draw.
+        
+        var verticesFlat=[];
+        var textureCordsFlat=[];
+        var vertexIndices=[];
+        var count=0;
+        
+        for (face of faces) {
+            
+            var keyVert=null;
+            var keyTextureCord=null;
+            var prevVert=null;
+            var prevTextureCord=null;
+            
+            //For each polygon, we assume the points are in a clockwise/counterclockwise order
+            //Thus we draw triangles, all sharing the first vertex listed in the obj file
+            for (vertex of face) {
+                var pieces = vertex.split('/');
+                if (keyVert==null) {//first vertex, all triangles share this
+                    keyVert = vertices[parseInt(pieces[0])-1];
+                    
+                    keyTextureCord = textureCoords[parseInt(pieces[1])-1];
+                } else if (prevVert==null) {//set up the "previous" for our first triangle
+                    prevVert = vertices[parseInt(pieces[0])-1];
+                    
+                    prevTextureCord = textureCoords[parseInt(pieces[1])-1];
+                } else {
+                    var thisVert = vertices[parseInt(pieces[0])-1];
+                    
+                    var thisTextureCord = textureCoords[parseInt(pieces[1])-1];
+                    
+                    //var logger="";
+                    //logger = logger.concat("face: (");
+                    
+                    for (n of keyVert) {
+                        verticesFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    vertexIndices.push(count++);
+                    //logger = logger.concat(")(");
+                    for (n of prevVert) {
+                        verticesFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    vertexIndices.push(count++);
+                    //logger = logger.concat(")(");
+                    for (n of thisVert) {
+                        verticesFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    vertexIndices.push(count++);
+                    //logger = logger.concat(")  [");
+                    
+                    for (n of keyTextureCord) {
+                        textureCordsFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    //logger = logger.concat("][");
+                    for (n of prevTextureCord) {
+                        textureCordsFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    //logger = logger.concat("][");
+                    for (n of thisTextureCord) {
+                        textureCordsFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    //logger = logger.concat("] ... " + verticesFlat.length + "\n");
+                    //console.log(logger);
+                    
+                    //This is similar to stripping, but for each polygon
+                    prevVert=thisVert;
+                    prevTextureCord=thisTextureCord;
+                    
+                }
+                
+                
+            }
+        }
+        //console.log(count);
+        
+        toFill.vertexPositionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, toFill.vertexPositionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verticesFlat), gl.STATIC_DRAW);
+        toFill.vertexPositionBuffer.itemSize = 3;
+        toFill.vertexPositionBuffer.numItems = count;//They all have the same number of references
+        
+        toFill.vertexTextureCordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, toFill.vertexTextureCordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCordsFlat), gl.STATIC_DRAW);
+        toFill.vertexTextureCordBuffer.itemSize = 2;
+        toFill.vertexTextureCordBuffer.numItems = count;
+        
+        toFill.vertexIndexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, toFill.vertexIndexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(vertexIndices), gl.STATIC_DRAW);
+        toFill.vertexIndexBuffer.itemSize = 1;
+        toFill.vertexIndexBuffer.numItems = count;
+        
+	  //toFill is already held by what needs it
+    }
+    
+    
+
+    var xRot = 0;
+    var yRot = 0;
+    var zRot = 0;
+    
+    
+    function drawTexturedObject(texturedObject) {
+        //check if it's loaded
+        if (texturedObject.vertexPositionBuffer === null ||
+            shaderProgram.textureCoordAttribute === null ||
+            texturedObject.vertexIndexBuffer === null)
+            return;
+        
+        mvPushMatrix();//push current transformations so we can get back to them
+        
+        
+        
+        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+        //console.log(pMatrix);
+        
+        mat4.identity(mvMatrix);
+        mat4.translate(mvMatrix, texturedObject.location);
+        
+        //mat4.rotate(mvMatrix, degToRad(xRot), [1, 0, 0]);
+        //mat4.rotate(mvMatrix, degToRad(yRot), [0, 1, 0]);
+        //mat4.rotate(mvMatrix, degToRad(zRot), [0, 0, 1]);
+        //mat4.scale(mvMatrix, [texturedObject.scale,texturedObject.scale,texturedObject.scale]);
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, texturedObject.vertexPositionBuffer);
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, texturedObject.vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, texturedObject.vertexTextureCordBuffer);
+        gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, texturedObject.vertexTextureCordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+        
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, texturedObject.texture);
+        gl.uniform1i(shaderProgram.samplerUniform, 0);
+        
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, texturedObject.vertexIndexBuffer);
+        setMatrixUniforms();
+        gl.drawElements(gl.TRIANGLES, texturedObject.vertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+        
+        mvPopMatrix();//restore transformations
+    }
+
+    var lastTime = 0;
+    function animate() {
+        var timeNow = new Date().getTime();
+        if (lastTime != 0) {
+            var elapsed = timeNow - lastTime;
+            xRot += (90 * elapsed) / 1000.0;
+            yRot += (40 * elapsed) / 1000.0;
+            zRot += (30 * elapsed) / 1000.0;
+        }
+
+        lastTime = timeNow;
+    }
+
+    function TexturedObject(imgName, objName, location, scale) {
+        initTexturedObject(imgName,objName,this);
+        this.location = location;
+        this.scale = scale;
+    }
+
+    function webGLStart() {
+        var canvas = document.getElementById("it-is-a-canvas");
+        initGL(canvas);
+        initShaders();
+        //initBuffers();
+        //initTexture();
+        var sceneElements = [];
+        
+        var texturedCrayon= new TexturedObject('violetCrayon.png','violet_crayon.obj',[0.0, 5.0, -30.0],0.45);
+        var texturedBox= new TexturedObject('CrayonBox2.png','color_box.obj',[0.0, -5.0, -30.0],1);
+        
+        sceneElements.push(texturedCrayon);
+        sceneElements.push(texturedBox);
+        
+        gl.clearColor(0.2, 0.2, 0.2, 1.0);
+        gl.enable(gl.DEPTH_TEST);
+        
+        
+        function tick() {
+            requestAnimFrame(tick);
+            //drawScene();
+            gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            
+            for (ele of sceneElements) {
+            	drawTexturedObject(ele);
+            }
+            animate();
+        }
+        tick();
+    }
+
+</script>
+
+
+</head>
+
+
+<body onload="webGLStart();">
+    <h>Brian's CS455 project</h>
+    <br/>
+
+    <canvas id="it-is-a-canvas" style="border: none;" width="500" height="500"></canvas>
+
+    
+</body>
+
+</html>
