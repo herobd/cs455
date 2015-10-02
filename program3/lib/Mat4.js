@@ -1,4 +1,6 @@
 //define(function () {
+var noz=true;
+
     function Vec(values) {
         if (values !== undefined) {
             this[0]=values[0];
@@ -115,13 +117,64 @@
         var basis_change = M.multiply((new Mat4()).translate([-lookAt[0],-lookAt[1],-lookAt[2]]));
         
         var perspective_matrix = new Mat4();
+        if (noz) {
         perspective_matrix.set(2,2,0);
         perspective_matrix.set(3,2,1/d);
+        } else {
+
+        	/*var aspect = 1.0;
+        	var znear = 0;
+        	var zfar = 100;
+        	
+		var ymax = znear * Math.tan(fieldOfView * Math.PI/360);
+		var ymin = -ymax;
+		var xmax = ymax * aspect;
+		var xmin = ymin * aspect;
+
+		var width = xmax - xmin;
+		var height = ymax - ymin;
+
+		var depth = zfar - znear;
+		var q = -(zfar + znear) / depth;
+		var qn = -2 * (zfar * znear) / depth;
+
+		var w = 2 * znear / width;
+		//w = w / aspect;
+		var h = 2 * znear / height;
+		
+		perspective_matrix.set(0,0,w);
+		perspective_matrix.set(1,1,h);
+		perspective_matrix.set(2,2,q);
+		perspective_matrix.set(2,3,-1);
+		perspective_matrix.set(3,3,0);
+		perspective_matrix.set(3,2,qn);*/
+		
+		/*
+		var znear = 0.1;
+        	var zfar = 100;
+		perspective_matrix.set(0,0,Math.atan(fieldOfView*Math.PI/90));
+		perspective_matrix.set(1,1,Math.atan(fieldOfView*Math.PI/90));
+		perspective_matrix.set(2,2,-(zfar+znear)/(zfar-znear));
+		perspective_matrix.set(2,3,2*znear*zfar/(zfar-znear));
+		perspective_matrix.set(3,3,0);
+		perspective_matrix.set(3,2,-1);*/
+		
+		
+		
+        //perspective_matrix.set(3,2,1/d);
+        }
+        /*var windowSize = gl.viewportWidth;
+        var s_xy = 2.0*lookAt[3]/((windowSize)*(lookAt[3]+100.0));
+        var s_z = -1.0/(lookAt[3]+100.0);
+        var canonScale = (new Mat4()).scale([s_xy,s_xy,s_z]);
+        var prpTrans = (new Mat4()).translate([-lookFrom[0],-lookFrom[1],-lookFrom[2]]);
+        perspective_matrix = perspective_matrix.multiply(canonScale.multiply(prpTrans.multiply(basis_change)));*/
+        
         perspective_matrix = perspective_matrix.multiply(basis_change);
         
         //Now to window to viewport transform
-        var theta = Math.PI * (fieldOfView/2)/180;
-        var x_win = Math.tan(theta) * d;
+        //var theta = Math.PI * (fieldOfView/2)/180;
+        //var x_win = Math.tan(theta) * d;
         
         //console.log(d + ' ' + x_win);
         //.translate([x_win,x_win,0])

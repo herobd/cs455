@@ -42,17 +42,15 @@
         
         
     }
-    WheelObject.prototype = Object.create(GenericObject.prototype, {
-        setSteerRotation : function(angle) {
-            this.steerRotation = (new Mat4()).rotateXY(angle);
-        },
-        
-        getDrawMatrix : function() {
-        	return this.owner.getDrawMatrix().multiply(this.position).multiply(this.steerRotation).multiply(this.scaleM);
-        }
-    });
+    WheelObject.prototype = Object.create(GenericObject.prototype);
     WheelObject.prototype.constructor = WheelObject;
-    
+    WheelObject.prototype.setSteerRotation = function(angle) {
+            this.steerRotation = (new Mat4()).rotateXY(angle);
+        };
+        
+    WheelObject.prototype.getDrawMatrix = function() {
+        	return this.owner.getDrawMatrix().multiply(this.position).multiply(this.steerRotation).multiply(this.scaleM);
+        };
     
     function CarObject(chasisImg,chasisObj,wheelImg,wheelObj,scale,positionMatrix,owner) {
         GenericObject.call(this,null,null,scale,positionMatrix,owner);
@@ -62,14 +60,13 @@
         
         this.parts = [this.chasis,this.FRWheel];
     }
-    CarObject.prototype = Object.create(GenericObject.prototype, {
-        steerWheels : function(angle) {
-            this.FRWheel.setSteerRotation(angle);
-            this.FLWheel.setSteeRotation(angle);
-        },
-        getParts : function() {
-        	 return this.parts;
-        }
-    });
+    CarObject.prototype = Object.create(GenericObject.prototype);
     
     CarObject.prototype.constructor = CarObject;
+    CarObject.prototype.steerWheels = function(angle) {
+            this.FRWheel.setSteerRotation(angle);
+            this.FLWheel.setSteeRotation(angle);
+        };
+    CarObject.prototype.getParts = function() {
+        	 return this.parts;
+        };

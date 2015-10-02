@@ -1,6 +1,6 @@
 //define(function(require) {
 
-
+    var logger=200;
     //var Mat4 = require('Mat4');
     var gl;
     function initGL(canvas) {
@@ -166,10 +166,19 @@ var mvMatrix = mat4.create();
     
     //Assumes my Mat4 objects
     function setMatrixUniforms(perspectiveMat,moveMat) {
-        //gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, perspectiveMat.flat());
+        if (noz) {
         gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, moveMat.flat());
-        
         gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, perspectiveMat.flat());
+        
+        } else {
+        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, perspectiveMat.multiply(moveMat).flat());
+        //gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, (moveMat.translate([0.0,-1,0.0])).flat());
+        
+        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
+        }
+    
+        
         
         
     }
@@ -364,21 +373,64 @@ var mvMatrix = mat4.create();
     
     var currentlyPressedKeys = {};
     
-    var logger=200;
-    
-    var lastTime = 0;
-    function animate(camera) {
-        var timeNow = new Date().getTime();
-        if (lastTime != 0) {
-            var elapsed = timeNow - lastTime;
+    function handleInput(elapsed) {
+        var gamepad = navigator.getGamepads()[0];
+        if (gamepad !== undefined && gamepad !== null) {
+            var stick1x = -gamepad.axes[0];
+            var stick1y = -gamepad.axes[1];
+            var stick2x = gamepad.axes[2];
+            var stick2y = gamepad.axes[3];
+            //TODO
+            //normalize stick vector
+            //zero out noise readings
+            //
+            
+            //Translation (walking)
+            var d = camera.lookingFrom.minus(camera.lookingAt);
+            var horzViewAxis = d.cross(camera.up);
+		var vertViewAxis = horzViewAxis.cross(d);
+		var dmag = d.mag();
+            
+            d[1]=0;//ignore y
+            var orth = d.cross(camera.up);
+            d = d.normalize();
+            orth = orth.normalize();
+            
+            var moveVec = d.scale(stick1y).plus(orth.scale(stick1x)).scale((camera.moveSpeed * elapsed) / 1000.0);
             
             
-            if (currentlyPressedKeys[68]) {//d
+            camera.lookingAt = camera.lookingAt.plus(moveVec);
+		camera.lookingFrom = camera.lookingFrom.plus(moveVec);
+		
+		//rotation (aiming)
+		var mHorz = 2*dmag*Math.sin(camera.rotSpeed*stick2x);
+		var mVert = 2*dmag*Math.sin(camera.rotSpeed*stick2y);
+		var dirHorz = horzViewAxis.normalize().scale(mHorz);
+		var dirVert = vertViewAxis.normalize().scale(mVert);
+		camera.lookingAt = camera.lookingAt.plus(dirHorz.plus(dirVert));
+		
+		/*for (var i=0; i<gamepad.buttons.length; i++) {
+		    if (gamepad.buttons[i].pressed || gamepad.buttons[i].value !== 0) {
+		        console.log('['+i+'] pressed='+gamepad.buttons[i].pressed+'  value='+gamepad.buttons[i].value);
+		    }
+		}*/
+		
+		if (gamepad.buttons[14].pressed || gamepad.buttons[14].value !== 0) {
+		    //turn left
+		}
+		if (gamepad.buttons[15].pressed || gamepad.buttons[15].value !== 0) {
+		    //turn right
+		}
+        }
+        
+        
+        //keyboard control
+        if (currentlyPressedKeys[68]) {//d
                 var d = camera.lookingFrom.minus(camera.lookingAt);
                 d[1]=0;//ignore y
                 var orth = d.cross(camera.up);
                 
-                orth = orth.normalize().scale((1*camera.moveSpeed * elapsed) / 1000.0);
+                orth = orth.normalize().scale((-1*camera.moveSpeed * elapsed) / 1000.0);
                 
                 camera.lookingAt = camera.lookingAt.plus(orth);
 		    camera.lookingFrom = camera.lookingFrom.plus(orth);
@@ -389,7 +441,7 @@ var mvMatrix = mat4.create();
                 var d = camera.lookingFrom.minus(camera.lookingAt);
                 d[1]=0;//ignore y
                 var orth = d.cross(camera.up);
-                orth = orth.normalize().scale((-1*camera.moveSpeed * elapsed) / 1000.0);
+                orth = orth.normalize().scale((1*camera.moveSpeed * elapsed) / 1000.0);
                 
                 camera.lookingAt = camera.lookingAt.plus(orth);
 		    camera.lookingFrom = camera.lookingFrom.plus(orth);
@@ -400,7 +452,7 @@ var mvMatrix = mat4.create();
                 var d = camera.lookingFrom.minus(camera.lookingAt);
                 d[1]=0;//ignore y
                 
-                d = d.normalize().scale((1*camera.moveSpeed * elapsed) / 1000.0);
+                d = d.normalize().scale((-1*camera.moveSpeed * elapsed) / 1000.0);
                 
                 camera.lookingAt = camera.lookingAt.plus(d);
 		    camera.lookingFrom = camera.lookingFrom.plus(d);
@@ -411,7 +463,7 @@ var mvMatrix = mat4.create();
                 var d = camera.lookingFrom.minus(camera.lookingAt);
                 d[1]=0;//ignore y
                 
-                d = d.normalize().scale((-1*camera.moveSpeed * elapsed) / 1000.0);
+                d = d.normalize().scale((1*camera.moveSpeed * elapsed) / 1000.0);
                 
                 camera.lookingAt = camera.lookingAt.plus(d);
 		    camera.lookingFrom = camera.lookingFrom.plus(d);
@@ -447,13 +499,23 @@ var mvMatrix = mat4.create();
 		    dir = dir.scale(m);
 		    camera.lookingAt = camera.lookingAt.plus(dir);
 		}
+    }
+    
+    var lastTime = 0;
+    function animate(camera) {
+        var timeNow = new Date().getTime();
+        if (lastTime != 0) {
+            var elapsed = timeNow - lastTime;
+            handleInput(elapsed);
             
             
-            if (logger++>200) {
+            
+            
+            /*if (logger++>200) {
                  logger=0;
                  console.log('FROM: x=' + camera.lookingFrom[0] + ', y=' + camera.lookingFrom[1] + ', z=' + camera.lookingFrom[2]);
                  console.log('AT:   x=' + camera.lookingAt[0] + ', y=' + camera.lookingAt[1] + ', z=' + camera.lookingAt[2]);
-            }
+            }*/
         }
 
         lastTime = timeNow;
@@ -513,19 +575,28 @@ var mvMatrix = mat4.create();
         texturedCrayon= new GenericObject('violetCrayon.png', path +'violet_crayon.obj',0.1,other_camera.lookingFrom);
         texturedBox= new GenericObject('tire.bmp', path +'color_box.obj',0.1,other_camera.lookingAt);
         var parkingLot= new GenericObject('ParkingLot.bmp', path +'ParkingLot.obj',1,[0.0, 0.0, 0.0]);
-        var car= new CarObject('car.bmp', path +'car.obj','tire.bmp', path +'tire.obj',1,[0.0, 0.0, 0.0]);
+        //var car= new CarObject('car.bmp', path +'car.obj','tire.bmp', path +'tire.obj',1,[0.0, 0.0, 0.0]);
         
+        var test = new GenericObject('tire.bmp', path +'tire.obj',1,[0.0, 1, -5.0]);
+        var test2 = new GenericObject('tire.bmp', path +'tire.obj',1,[2.0, 1, -5.0]);
+        
+        
+        sceneElements.push(test);
         sceneElements.push(texturedCrayon);
         sceneElements.push(texturedBox);
         sceneElements.push(parkingLot);
+        //sceneElements.push(car);
+        sceneElements.push(test2);
         
         gl.clearColor(0.2, 0.2, 0.2, 1.0);
+        gl.clearDepth(1.0);
         gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
         
         camera = {
             fieldOfView: 45,
-            lookingFrom: new Vec([25,0.6,10]),
-            lookingAt: new Vec([20,0.6,7]),
+            lookingAt: new Vec([25,0.6,10]),
+            lookingFrom: new Vec([20,0.6,7]),
             up: new Vec([0,1,0]),
             moveSpeed: 5,
             rotSpeed: degToRad(0.2)
@@ -537,10 +608,14 @@ var mvMatrix = mat4.create();
             gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
             
+            //var testmat = new Mat4().translate([2,2,0]);
             
-            
-            var perspectiveMat = (new Mat4()).perspective(camera.fieldOfView,camera.lookingFrom,camera.lookingAt,camera.up);
-            
+            var perspectiveMat = (new Mat4()).perspective(camera.fieldOfView,camera.lookingAt,camera.lookingFrom,camera.up);
+            if (logger++>200) {
+                logger=0;
+                console.log(perspectiveMat);
+                //console.log(perspectiveMat.multiply(testmat));
+            }
             
             //var perspectiveMat.values = [[2.4142136573791504, 0, 0, 0, ],
              //                        [0, 2.4142136573791504, 0, 0, ],
@@ -554,11 +629,11 @@ var mvMatrix = mat4.create();
              //drawTexturedObjectNew(texturedCrayon,perspectiveMat);
              //drawTexturedObjectOld(texturedCrayonOld);
              
-             
+            animate(camera);
             for (ele of sceneElements) {
             	drawTexturedObject(ele,perspectiveMat);
             }
-            animate(camera);
+            
         }
         tick();
     }

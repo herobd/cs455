@@ -207,19 +207,11 @@
         mvMatrix = mvMatrixStack.pop();
     }
 
-var logger =0;
     function setMatrixUniforms() {
         gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
         gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
         
-        if (logger++>100) {
-            	//console.log(perspectiveMat);
-            	console.log('pMatrix');
-            	console.log(pMatrix);
-            	console.log('mvMatrix');
-            	console.log(mvMatrix);
-            	logger=0;
-            }
+
     }
 
     function degToRad(degrees) {
