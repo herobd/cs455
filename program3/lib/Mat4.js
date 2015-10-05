@@ -1,5 +1,5 @@
 //define(function () {
-var noz=true;
+var noz=false;
 
     function Vec(values) {
         if (values !== undefined) {
@@ -86,7 +86,7 @@ var noz=true;
                              [0, 0, 1, vec[2]],
                              [0, 0, 0, 1] ];
             return trans.multiply(this);
-        };
+    };
     
     Mat4.prototype.scale = function(vec) {
             var sc = new Mat4();
@@ -95,7 +95,35 @@ var noz=true;
                              [0, 0, vec[2], 0],
                              [0, 0, 0, 1] ];
             return sc.multiply(this);
-        };
+    };
+    
+    Mat4.prototype.rotateXAxis = function(angle) {
+            var theta = angle*Math.PI/180;
+            var rot = new Mat4();
+            rot.values =   [ [1,               0,                0, 0],
+                             [0, Math.cos(theta), -Math.sin(theta), 0],
+                             [0, Math.sin(theta),  Math.cos(theta), 0],
+                             [0,               0,                0, 1] ];
+            return rot.multiply(this);
+    };
+    Mat4.prototype.rotateYAxis = function(angle) {
+            var theta = angle*Math.PI/180;
+            var rot = new Mat4();
+            rot.values =   [ [ Math.cos(theta), 0, Math.sin(theta), 0],
+                             [ 0              , 1, 0              , 0],
+                             [-Math.sin(theta), 0, Math.cos(theta), 0],
+                             [0               , 0, 0              , 1] ];
+            return rot.multiply(this);
+    };
+    Mat4.prototype.rotateZAxis = function(angle) {
+            var theta = angle*Math.PI/180;
+            var rot = new Mat4();
+            rot.values =   [ [ Math.cos(theta),-Math.sin(theta), 0, 0],
+                             [ Math.sin(theta), Math.cos(theta), 0, 0],
+                             [               0,               0, 1, 0],
+                             [               0,               0, 0, 1] ];
+            return rot.multiply(this);
+    };
 
     Mat4.prototype.perspective = function(fieldOfView,lookAt,lookFrom,up) {
         var N = (lookFrom).minus(lookAt);
@@ -175,17 +203,8 @@ var noz=true;
         //Now to window to viewport transform
         //var theta = Math.PI * (fieldOfView/2)/180;
         //var x_win = Math.tan(theta) * d;
-        
-        //console.log(d + ' ' + x_win);
-        //.translate([x_win,x_win,0])
-        //window to viewport
         //perspective_matrix = perspective_matrix.scale([gl.viewportWidth/(2*x_win),gl.viewportHeight/(2*x_win),1]);
         
-        //hack
-        //perspective_matrix.set(2,2,-1);
-        //perspective_matrix.set(2,3,-0.2);
-        //perspective_matrix.set(3,2,-1);
-        //perspective_matrix.set(0,0,1);
         
         return perspective_matrix;
     };
