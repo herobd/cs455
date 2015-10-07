@@ -166,17 +166,11 @@ var mvMatrix = mat4.create();
 
 //Assumes my Mat4 objects
 function setMatrixUniforms(perspectiveMat,moveMat) {
-    if (noz) {
-    gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, moveMat.flat());
-    gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, perspectiveMat.flat());
-    
-    } else {
     gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, perspectiveMat.multiply(moveMat).flat());
     //gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, (moveMat.translate([0.0,-1,0.0])).flat());
     
     mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
     gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
-    }
 
     
     
