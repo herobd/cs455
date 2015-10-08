@@ -236,19 +236,19 @@
     
     function CarObject(chasisImg,chasisObj,wheelImg,wheelObj,scale,positionMatrix,owner) {
         GenericObject.call(this,null,null,scale,positionMatrix,owner);
-        
-        this.chasis = new GenericObject(chasisImg,chasisObj,1,[0,0,0],this);
-        this.FRWheel = new WheelObject(wheelImg,wheelObj,0.25,[0.37,0.15,-0.535],this);
-        this.FLWheel = new WheelObject(wheelImg,wheelObj,0.25,[-0.37,0.15,-0.535],this);
+        var centerOffset = -0.4;
+        this.chasis = new GenericObject(chasisImg,chasisObj,1,[0,0,centerOffset],this);
+        this.FRWheel = new WheelObject(wheelImg,wheelObj,0.25,[0.37,0.15,centerOffset-0.535],this);
+        this.FLWheel = new WheelObject(wheelImg,wheelObj,0.25,[-0.37,0.15,centerOffset-0.535],this);
         this.FLWheel.rotation = (new Mat4()).rotateYAxis(180);
         
-        this.BRWheel = new WheelObject(wheelImg,wheelObj,0.25,[0.37,0.15,0.48],this);
-        this.BLWheel = new WheelObject(wheelImg,wheelObj,0.25,[-0.37,0.15,0.48],this);
+        this.BRWheel = new WheelObject(wheelImg,wheelObj,0.25,[0.37,0.15,centerOffset+0.48],this);
+        this.BLWheel = new WheelObject(wheelImg,wheelObj,0.25,[-0.37,0.15,centerOffset+0.48],this);
         this.BLWheel.rotation = (new Mat4()).rotateYAxis(180);
         
         this.parts = [this.chasis,this.FRWheel,this.FLWheel,this.BRWheel,this.BLWheel];
         this.turning = 0;
-        this.turnSpeed=10.0;
+        this.turnSpeed=6.0;
         this.turned=0.0;
         
         this.driving = 0;
@@ -268,15 +268,15 @@
     };
     CarObject.prototype.getDrawMatrix = function() {
         	 
-        	 return this.owner.getDrawMatrix().multiply(this.position).multiply(this.rotation).multiply(this.movement).multiply(this.scaleM);
+        	 return this.owner.getDrawMatrix().multiply(this.position).multiply(this.rotation).multiply(this.scaleM);
     };
-    CarObject.prototype.animate = function() {
-            if (this.turning<0 && this.turned > -55) {
+    CarObject.prototype.animate = function(elapsed) {
+            if ((this.turning<0 && this.turned > -55) || (this.turning==0 && this.turned>0)) {
         	    this.FRWheel.steerRotation = this.FRWheel.steerRotation.rotateYAxis(-this.turnSpeed);
         	    this.FLWheel.steerRotation = this.FLWheel.steerRotation.rotateYAxis(-this.turnSpeed);
         	    this.turned += -this.turnSpeed;
         	}
-    	    else if (this.turning>0 && this.turned < 55) {
+    	    else if ((this.turning>0 && this.turned < 55) || (this.turning==0 && this.turned<0)) {
         	    this.FRWheel.steerRotation = this.FRWheel.steerRotation.rotateYAxis(this.turnSpeed);
         	    this.FLWheel.steerRotation = this.FLWheel.steerRotation.rotateYAxis(this.turnSpeed);
         	    this.turned += this.turnSpeed;
@@ -292,18 +292,20 @@
         	this.turning=0;
         	
         	
-        	if (this.driving > 0) {
+        	if (this.driving != 0) {
         	    this.rotation = this.rotation.rotateYAxis(this.rotateConstant * this.turned);
-        	    this.position = this.position.multiply(this.rotation).multiply((new Mat4()).translate([0,0,-this.driveSpeed]));
+        	    var transPoint  = (this.rotation).multiply((new Mat4()).translate([0,0,this.driving*-this.driveSpeed]))
+        	    this.position = this.position.translate([transPoint.get(0,3), transPoint.get(1,3), transPoint.get(2,3)]);
+        	    //console.log(this.position);
         	    //this.movement = this.movement.multiply((new Mat4()).translate([0,0,-this.driveSpeed]));//this.rotation
         	}
         	this.driving=0;
     };
     CarObject.prototype.turnLeft = function() {
-    	 this.turning=-1;
+    	 this.turning=1;
     };
     CarObject.prototype.turnRight = function() {
-    	 this.turning=1;
+    	 this.turning=-1;
     };
     CarObject.prototype.driveForwards = function() {
     	 this.driving=1;

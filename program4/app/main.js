@@ -49,12 +49,13 @@ function drawTexturedObject(texturedObject,perspectiveMat) {
     
 
 var lastTime = 0;
-function animate(camera,car,ghost) {
+function animate(sceneElements) {
     var timeNow = new Date().getTime();
     if (lastTime != 0) {
         var elapsed = timeNow - lastTime;
         controller.onTick(elapsed);
-        
+        for (ele of sceneElements) 
+            ele.animate();
         /*if (logger++>200) {
              logger=0;
              console.log('FROM: x=' + camera.lookingFrom[0] + ', y=' + camera.lookingFrom[1] + ', z=' + camera.lookingFrom[2]);
@@ -268,15 +269,20 @@ function webGLStart() {
         if (pressed) {car.driveBackwards();}
     });
     
-    
+    controller.buttonW.push( function(elapsed,pressed) {
+        if (pressed) {car.driveForwards();}
+    });
+    controller.buttonS.push( function(elapsed,pressed) {
+        if (pressed) {car.driveBackwards();}
+    });
     
     controller.showGamePadMessage = function() {
         var cind = document.getElementById("cind");
         cind.innerHTML="No controller detected. Press any button.";
     }
-    controller.hideGamePadMessage = function() {
+    controller.hideGamePadMessage = function(padid) {
         var cind = document.getElementById("cind");
-        cind.innerHTML="Controller connected.";
+        cind.innerHTML="Controller connected: "+padid;
     }
         
     
@@ -291,9 +297,8 @@ function webGLStart() {
         
         var perspectiveMat = (new Mat4()).perspective(camera.fieldOfView,camera.lookingAt,camera.lookingFrom,camera.up);
          
-        animate(camera,car,ghost);
+        animate(sceneElements);
         for (ele of sceneElements) {
-            ele.animate();
         	drawTexturedObject(ele,perspectiveMat);
         }
         
