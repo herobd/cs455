@@ -1,7 +1,7 @@
 define( function() {
     
     var controller =  {
-    
+        player : 0,
         stickL : [],//array of functions(elapsed,x,y)
         stickR : [],//array of functions(elapsed,x,y)
         stickLR : [],//array of functions(elapsed,xL,yL,xR,yR)
@@ -24,7 +24,7 @@ define( function() {
         currentlyPressedKeys : {},
         
         onTick : function(elapsed) {
-            var gamepad = navigator.getGamepads()[0];
+            var gamepad = navigator.getGamepads()[this.player];
     
             var cind = document.getElementById("cind");
             if (gamepad !== undefined && gamepad !== null) {

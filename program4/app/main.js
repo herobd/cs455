@@ -29,6 +29,7 @@ var controller = require('Controller');
 
 
 
+
 //New
 function drawTexturedObject(texturedObject,perspectiveMat) {
     //check if it's loaded
@@ -55,7 +56,7 @@ function animate(sceneElements) {
         var elapsed = timeNow - lastTime;
         controller.onTick(elapsed);
         for (ele of sceneElements) 
-            ele.animate();
+            ele.animate(elapsed);
         /*if (logger++>200) {
              logger=0;
              console.log('FROM: x=' + camera.lookingFrom[0] + ', y=' + camera.lookingFrom[1] + ', z=' + camera.lookingFrom[2]);
@@ -103,6 +104,7 @@ function webGLStart() {
     var parkingLot= new GenericObject('ParkingLot.bmp', path +'ParkingLot.obj',1,[0.0, 0.0, 0.0]);
     var car= new CarObject('car.bmp', path +'car.obj','tire.bmp', path +'tire.obj',1.25,[-2.58, 0.015, -7.66]);
     car.rotation = car.rotation.rotateYAxis(-120);
+    var car2= new CarObject('car.bmp', path +'car.obj','tire.bmp', path +'tire.obj',1.25,[-4.58, 0.015, -1.66]);
     
     var ghost= new GenericObject('cloth_text.png', path +'wraith_text.obj',.15,[-4.5, -0.01, -8.5]);
     ghost.rotation = ghost.rotation.rotateYAxis(-30);
@@ -117,6 +119,7 @@ function webGLStart() {
     sceneElements.push(texturedBox);
     sceneElements.push(parkingLot);
     sceneElements.push(car);
+    sceneElements.push(car2);
     sceneElements.push(ghost);
     //sceneElements.push(test2);
     

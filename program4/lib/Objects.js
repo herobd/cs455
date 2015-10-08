@@ -218,7 +218,7 @@
     function WheelObject(wheelImg,wheelObj,scale,positionMatrix,owner) {
         GenericObject.call(this,wheelImg,wheelObj,scale,positionMatrix,owner);
         this.steerRotation = new Mat4();
-        //this.spinRotation = new Mat4();
+        this.spinRotation = new Mat4();
         
         
     }
@@ -229,7 +229,7 @@
     };
         
     WheelObject.prototype.getDrawMatrix = function() {
-    	return this.owner.getDrawMatrix().multiply(this.position).multiply(this.steerRotation).multiply(this.rotation).multiply(this.scaleM);
+    	return this.owner.getDrawMatrix().multiply(this.position).multiply(this.steerRotation).multiply(this.spinRotation).multiply(this.rotation).multiply(this.scaleM);
     };
     
 ////////////////////////////////
@@ -252,7 +252,8 @@
         this.turned=0.0;
         
         this.driving = 0;
-        this.rotateConstant = 0.05;
+        this.rotateConstant = 0.075;
+        this.spinConstant = 3;
         this.driveSpeed=0.1;
         this.movement = new Mat4();
     }
@@ -272,13 +273,13 @@
     };
     CarObject.prototype.animate = function(elapsed) {
             if ((this.turning<0 && this.turned > -55) || (this.turning==0 && this.turned>0)) {
-        	    this.FRWheel.steerRotation = this.FRWheel.steerRotation.rotateYAxis(-this.turnSpeed);
-        	    this.FLWheel.steerRotation = this.FLWheel.steerRotation.rotateYAxis(-this.turnSpeed);
+        	    this.FRWheel.steerRotation = this.FRWheel.steerRotation.rotateYAxis(-this.turnSpeed * (elapsed/16.0));
+        	    this.FLWheel.steerRotation = this.FLWheel.steerRotation.rotateYAxis(-this.turnSpeed * (elapsed/16.0));
         	    this.turned += -this.turnSpeed;
         	}
     	    else if ((this.turning>0 && this.turned < 55) || (this.turning==0 && this.turned<0)) {
-        	    this.FRWheel.steerRotation = this.FRWheel.steerRotation.rotateYAxis(this.turnSpeed);
-        	    this.FLWheel.steerRotation = this.FLWheel.steerRotation.rotateYAxis(this.turnSpeed);
+        	    this.FRWheel.steerRotation = this.FRWheel.steerRotation.rotateYAxis(this.turnSpeed * (elapsed/16.0));
+        	    this.FLWheel.steerRotation = this.FLWheel.steerRotation.rotateYAxis(this.turnSpeed * (elapsed/16.0));
         	    this.turned += this.turnSpeed;
         	}
         	
@@ -293,11 +294,16 @@
         	
         	
         	if (this.driving != 0) {
-        	    this.rotation = this.rotation.rotateYAxis(this.rotateConstant * this.turned);
-        	    var transPoint  = (this.rotation).multiply((new Mat4()).translate([0,0,this.driving*-this.driveSpeed]))
+        	    this.rotation = this.rotation.rotateYAxis(this.rotateConstant * this.turned * (elapsed/16.0));
+        	    var transPoint  = (this.rotation).multiply((new Mat4()).translate([0,0,this.driving*-this.driveSpeed * (elapsed/16.0)]))
         	    this.position = this.position.translate([transPoint.get(0,3), transPoint.get(1,3), transPoint.get(2,3)]);
         	    //console.log(this.position);
         	    //this.movement = this.movement.multiply((new Mat4()).translate([0,0,-this.driveSpeed]));//this.rotation
+        	    
+        	    this.FRWheel.spinRotation = this.FRWheel.spinRotation.rotateXAxis(this.driving*-this.turnSpeed * this.spinConstant * (elapsed/16.0));
+        	    this.FLWheel.spinRotation = this.FRWheel.spinRotation.rotateXAxis(this.driving*-this.turnSpeed * this.spinConstant * (elapsed/16.0));
+        	    this.BRWheel.spinRotation = this.FRWheel.spinRotation.rotateXAxis(this.driving*-this.turnSpeed * this.spinConstant * (elapsed/16.0));
+        	    this.BLWheel.spinRotation = this.FRWheel.spinRotation.rotateXAxis(this.driving*-this.turnSpeed * this.spinConstant * (elapsed/16.0));
         	}
         	this.driving=0;
     };
