@@ -51,7 +51,7 @@ define( function() {
 	                    gamepad.axes[i]=0;
 	                }
 	            }*/
-                if (gamepad.id.substring(0,17) === "Holtek Controller") {//xbox
+                if (gamepad.id.substring(0,17) === "Holtek Controller"  || gamepad.id.substring(0,4) === "Xbox") {//xbox
                     stickLx = -gamepad.axes[0];
                     stickLy = gamepad.axes[1];
                     stickRx = -gamepad.axes[2];
