@@ -26,6 +26,7 @@
         this.scaleM = (new Mat4()).scale([scale,scale,scale]);
         
         this.rotation = new Mat4();
+        this.parts = [];
     };
     GenericObject.prototype.getDrawMatrix = function() {
         	 
@@ -36,7 +37,7 @@
         	 this.location = vec;
     };
     GenericObject.prototype.getParts = function() {
-        	 return [];
+        	 return this.parts;
     };
     GenericObject.prototype.animate = function() {
         	 //no animation
@@ -266,9 +267,6 @@
             this.FRWheel.setSteerRotation(angle);
             this.FLWheel.setSteeRotation(angle);
     };
-    CarObject.prototype.getParts = function() {
-        	 return this.parts;
-    };
     CarObject.prototype.getDrawMatrix = function() {
         	 
         	 return this.owner.getDrawMatrix().multiply(this.position).multiply(this.rotation).multiply(this.scaleM);
@@ -322,6 +320,43 @@
     	 this.driving=-1;
     };
 //////////////////////////////////
+
+function SolidObject(img,obj,radius,scale,positionMatrix,owner) {
+    GenericObject.call(this,img,obj,scale,positionMatrix,owner);
+    this.boundingRadius = radius;
+}
+SolidObject.prototype = Object.create(GenericObject.prototype);
+SolidObject.prototype.constructor = SolidObject;
+SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
+{
+    var futurePos = this.position.translate(myMoveVec);
+    var curDist = Math.sqrt( Math.pow(this.position.get(0,3)-otherSolidObject.position.get(0,3),2) + 
+                      // Math.pow(this.position.get(1,3)-otherSolidObject.position.get(1,3),2) + 
+                       Math.pow(this.position.get(2,3)-otherSolidObject.position.get(2,3),2) ) ;
+    var futDist = Math.sqrt( Math.pow(futurePos.get(0,3)-otherSolidObject.position.get(0,3),2) + 
+                      // Math.pow(futurePos.get(1,3)-otherSolidObject.position.get(1,3),2) + 
+                       Math.pow(futurePos.get(2,3)-otherSolidObject.position.get(2,3),2) ) ;
+    //console.log(dist);
+    if (futDist-(this.boundingRadius+otherSolidObject.boundingRadius) <= 0 && futDist<curDist) {
+        return (new Vec([otherSolidObject.position.get(0,3)-this.position.get(0,3),
+                       0,
+                       otherSolidObject.position.get(2,3)-this.position.get(2,3)])).normalize();
+    }
+    else
+        return null;
+}
+
+//////////////////////////////////
+    
+    function TreeObject(barkImg,trunkObj,scale,positionMatrix,owner) {
+        SolidObject.call(this,null,null,0.7,scale,positionMatrix,owner);
+        this.trunk = new TrunkObject(barkImg,trunkObj,15,0.3,[0.2,0,0],this);
+        this.parts = [this.trunk];
+        
+    }
+    TreeObject.prototype = Object.create(SolidObject.prototype);
+    TreeObject.prototype.constructor = TreeObject;
+    
     
     function TrunkObject(barkImg,trunkObj,textureScale,scale,positionMatrix,owner) {
         this.init(scale,positionMatrix,owner);

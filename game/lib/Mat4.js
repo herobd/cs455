@@ -40,6 +40,9 @@ var noz=false;
     Vec.prototype.cross = function(other) {
         return new Vec([this[1]*other[2] - this[2]*other[1], this[2]*other[0] - this[0]*other[2], this[0]*other[1] - this[1]*other[0]]);
     };
+    Vec.prototype.dot = function(other) {
+        return this[0]*other[0] + this[1]*other[1] + this[2]*other[2];
+    };
     
     Vec.prototype.mag = function() {
         return Math.sqrt(this[0]*this[0] + this[1]*this[1] + this[2]*this[2]);;
@@ -47,18 +50,27 @@ var noz=false;
     
     Vec.prototype.normalize = function() {
         var mag = this.mag();
-        this[0] /= mag;
-        this[1] /= mag;
-        this[2] /= mag;
+        if (mag !=0) {
+            this[0] /= mag;
+            this[1] /= mag;
+            this[2] /= mag;
+        }
         return this;
     };
 
-    function Mat4() {
-        this.values = [ [1, 0, 0, 0],
-                        [0, 1, 0, 0],
-                        [0, 0, 1, 0],
-                        [0, 0, 0, 1] ];
-    
+    function Mat4(copy) {
+        if (copy === undefined) { 
+            this.values = [ [1, 0, 0, 0],
+                            [0, 1, 0, 0],
+                            [0, 0, 1, 0],
+                            [0, 0, 0, 1] ];
+        }
+        else {
+            this.values = [ [copy.get(0,0), copy.get(0,1), copy.get(0,2), copy.get(0,3)],
+                            [copy.get(1,0), copy.get(1,1), copy.get(1,2), copy.get(1,3)],
+                            [copy.get(2,0), copy.get(2,1), copy.get(2,2), copy.get(2,3)],
+                            [copy.get(3,0), copy.get(3,1), copy.get(3,2), copy.get(3,3)] ];
+        }
     }
     Mat4.prototype.get = function(row,col) {
             return this.values[row][col];

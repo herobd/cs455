@@ -96,6 +96,7 @@ function webGLStart() {
     //initBuffers();
     //initTexture();
     var sceneElements = [];
+    var solidObjects = [];
     var path = window.location.pathname.substring(1);
     
     //var texturedCrayonOld= new TexturedObject('violetCrayon.png', path +'violet_crayon.obj',[0.0, 4.0, -30.0],1);
@@ -103,8 +104,8 @@ function webGLStart() {
     texturedBox= new GenericObject('assests/tire.bmp', path +'assests/color_box.obj',0.1,other_camera.lookingAt);
     var parkingLot= new GenericObject('assests/ParkingLot.bmp', path +'assests/ParkingLot.obj',1,[0.0, 0.0, 0.0]);
     var car= new CarObject('assests/car.bmp', path +'assests/car.obj','assests/tire.bmp', path +'assests/tire.obj',1.25,[-2.58, 0.015, -7.66]);
-    car.rotation = car.rotation.rotateYAxis(-120);
-    var trunk= new TrunkObject('assests/bark_sqr.png', path +'assests/trunk.obj',15,0.3,[-4.58, 0, -1.66]);
+    car.rotation = car.rotation.rotateYAxis(-120)
+    
     
     var ghost= new GenericObject('assests/cloth_text.png', path +'assests/wraith_text.obj',.15,[-4.5, -0.01, -8.5]);
     ghost.rotation = ghost.rotation.rotateYAxis(-30);
@@ -112,25 +113,37 @@ function webGLStart() {
     //var test = new GenericObject('tire.bmp', path +'tire.obj',1,[0.0, 1, -5.0]);
     //var test2 = new GenericObject('tire.bmp', path +'tire.obj',1,[2.0, 1, -5.0]);
     
-    
+    var axis1 = new GenericObject('assests/violetCrayon.png', path +'assests/violet_crayon.obj',0.2,[0,0,0]);
+    axis1.rotation = axis1.rotation.rotateZAxis(90);
+    var axis2 = new GenericObject('assests/violetCrayon.png', path +'assests/violet_crayon.obj',0.1,[0,0,0]);
+    axis2.rotation = axis2.rotation.rotateXAxis(90);
     
     //sceneElements.push(test);
     sceneElements.push(texturedCrayon);
     sceneElements.push(texturedBox);
     sceneElements.push(parkingLot);
     sceneElements.push(car);
-    sceneElements.push(trunk);
     sceneElements.push(ghost);
-    //sceneElements.push(test2);
+    sceneElements.push(axis1);
+    sceneElements.push(axis2);
     
-    var camera = {
-        fieldOfView: 45,
-        lookingAt: new Vec([0,1,0]),
-        lookingFrom: new Vec([0,1,0.3]),
-        up: new Vec([0,1,0]),
-        moveSpeed: 5,
-        rotSpeed: degToRad(0.7)
-    }
+    
+    var tree= new TreeObject('assests/bark_sqr.png', path +'assests/trunk.obj',1,[-4.58, 0, -1.66]);
+    var tree2= new TreeObject('assests/bark_sqr.png', path +'assests/trunk.obj',1,[-4.00, 0, -1.66]);
+    var tree3= new TreeObject('assests/bark_sqr.png', path +'assests/trunk.obj',1,[-4.00, 0, -5.66]);
+    solidObjects.push(tree);
+    solidObjects.push(tree2);
+    solidObjects.push(tree3);
+    
+    var camera = new SolidObject(null,null,0.3,1,new Vec([0,0,0.3]));
+    
+    camera.fieldOfView= 45;
+    camera.lookingAt= new Vec([0,1,0]);
+    camera.lookingFrom= new Vec([0,1,0.3]);
+    camera.up= new Vec([0,1,0]);
+    camera.moveSpeed= 5;
+    camera.rotSpeed= degToRad(0.7);
+    
     
     function movement(elapsed,stick1x,stick1y,stick2x,stick2y) {
         var d = camera.lookingFrom.minus(camera.lookingAt);
@@ -145,10 +158,20 @@ function webGLStart() {
         
         var moveVec = d.scale(stick1y).plus(orth.scale(stick1x)).scale((camera.moveSpeed * elapsed) / 1000.0);
         
-        
+
+        for (var ele of solidObjects)
+        {
+            var vec = camera.collisionCheck(ele,moveVec);
+            if (vec != null) {
+                moveVec = (vec.cross(camera.up)).scale(moveVec.dot(vec.cross(camera.up)));
+            }
+        }
+        //if (moveVec.mag() < 0.05) moveVec = new Vec();
         camera.lookingAt = camera.lookingAt.plus(moveVec);
         camera.lookingFrom = camera.lookingFrom.plus(moveVec);
-
+        camera.position=camera.position.translate(moveVec);
+        
+        
         //rotation (aiming)
         var mHorz = 2*dmag*Math.sin(camera.rotSpeed*stick2x);
         var mVert = 2*dmag*Math.sin(camera.rotSpeed*stick2y);
@@ -302,6 +325,10 @@ function webGLStart() {
          
         animate(sceneElements);
         for (ele of sceneElements) {
+        	drawTexturedObject(ele,perspectiveMat);
+        }
+        animate(solidObjects);
+        for (ele of solidObjects) {
         	drawTexturedObject(ele,perspectiveMat);
         }
         
