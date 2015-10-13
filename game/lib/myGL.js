@@ -15,8 +15,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
         initGL : function (canvas) {
             try {
                 this.gl=canvas.getContext("experimental-webgl");
-                this.gl = WebGLDebugUtils.makeDebugContext(
-    this.gl, undefined, validateNoneOfTheArgsAreUndefined);
+                //this.gl = WebGLDebugUtils.makeDebugContext(this.gl, undefined, validateNoneOfTheArgsAreUndefined);
                 this.viewportWidth = canvas.width;
                 this.viewportHeight = canvas.height;
             }

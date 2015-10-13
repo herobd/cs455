@@ -384,31 +384,45 @@ SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
     
     
     ////////////////////////////////
-    function FloorObject(floorImg,x1,z1,x2,z2,y) {
+    function FloorObject(floorImg,floorObj,x1,z1,x2,z2,y) {
         
         this.init(1,(new Mat4()).translate([x1,y,z1]));
         this.initTexture(floorImg);
+        this.initOBJ(floorObj);
         
-        var lenX = Math.abs(x2-x1);
+        /*var lenX = Math.abs(x2-x1);
         var lenZ = Math.abs(z2-z1);
-        var C=9;
-        var composedOBJ =  "v "+x1+" "+y+" "+z1+"\n"+
-                           "v "+x2+" "+y+" "+z1+"\n"+
+        var C=10;
+        /*var composedOBJ =  "v "+x1+" "+y+" "+z2+"\n"+
                            "v "+x2+" "+y+" "+z2+"\n"+
-                           "v "+x1+" "+y+" "+z2+"\n"+
+                           "v "+x1+" "+y+" "+z1+"\n"+
+                           "v "+x2+" "+y+" "+z1+"\n"+
                            "vt 0 0"+"\n"+
                            "vt "+C/lenX+" 0"+"\n"+
-                           "vt "+C/lenX+" "+C/lenZ+"\n"+
                            "vt 0 "+C/lenZ+"\n"+
+                           "vt "+C/lenX+" "+C/lenZ+"\n"+
                            "vn 0 1 0"+"\n"+
-                           "f 1/1/1 2/2/1 3/3/1 4/4/1";
-        
+                           "f 1/1/1 2/2/1 4/4/1 3/3/1";
+       /
+	var composedOBJ = "v -0.500000 -0.000000 0.500000\n"+
+"v 0.500000 -0.000000 0.500000\n"+
+"v -0.500000 0.000000 -0.500000\n"+
+"v 0.500000 0.000000 -0.500000\n"+
+"vt 0.000000 0.000000\n"+
+"vt 1.000000 0.000000\n"+
+"vt 0.000000 1.000000\n"+
+"vt 1.000000 1.000000\n"+
+"vn 0.000000 1.000000 0.000000\n"+
+"vn 0.000000 1.000000 0.000000\n"+
+"vn 0.000000 1.000000 0.000000\n"+
+"vn 0.000000 1.000000 0.000000";
+
         this.obj={};
         this.obj.vertexPositionBuffer=null;
-        this.obj.vertexTextureCordBuffer=null;
+        this.obj.vertexTextsreCordBuffer=null;
         this.obj.vertexIndexBuffer=null;
         this.setUpOBJ(this.obj,composedOBJ);
-        
+        */
         
     }
     FloorObject.prototype = Object.create(GenericObject.prototype);
