@@ -1,10 +1,22 @@
 define( function() {
+
+function validateNoneOfTheArgsAreUndefined(functionName, args) {
+  for (var ii = 0; ii < args.length; ++ii) {
+    if (args[ii] === undefined) {
+      console.error("undefined passed to gl." + functionName + "(" +
+                     WebGLDebugUtils.glFunctionArgsToString(functionName, args) + ")");
+    }
+  }
+} 
+
     return {
         shaderProgram : null,
 
         initGL : function (canvas) {
             try {
                 this.gl=canvas.getContext("experimental-webgl");
+                this.gl = WebGLDebugUtils.makeDebugContext(
+    this.gl, undefined, validateNoneOfTheArgsAreUndefined);
                 this.viewportWidth = canvas.width;
                 this.viewportHeight = canvas.height;
             }

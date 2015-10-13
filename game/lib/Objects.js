@@ -5,7 +5,8 @@
     
     function GenericObject(img,obj,scale,positionMatrix,owner) {
         this.init(scale,positionMatrix,owner);
-        this.initTexturedObject(img,obj);
+        this.initTexture(img);
+        this.initOBJ(obj);
     }
     GenericObject.prototype.init = function(scale,positionMatrix,owner) {
         if (owner !== undefined) {
@@ -156,16 +157,22 @@
             }
         }
         //console.log(count);
+        if (count <100)
+        {
+        console.log(count);
+        console.log(verticesFlat);
+        console.log(textureCordsFlat);
+        console.log(vertexIndices);
+        }
         
         myGL.initBuffer(toFill,verticesFlat,textureCordsFlat,vertexIndices,count);
     };
     
     var loadedTextures = {};
     var loadedOBJs = {};
-    GenericObject.prototype.initTexturedObject = function (imgName,objName,textureScale) {
-        textureScale = typeof textureScale !== 'undefined' ? textureScale : 1;
-        if (imgName === null || objName === null) {
-            this.obj = null;
+    GenericObject.prototype.initTexture = function (imgName) {
+        
+        if (imgName === null) {
             this.texture = null;
             return;
         }
@@ -183,8 +190,16 @@
         }
      
         this.texture = loadedTextures[imgName];
-        
-        
+
+              
+    }
+    
+    GenericObject.prototype.initOBJ = function (objName,textureScale) {
+        if (objName === null) {
+            this.obj = null;
+            return;
+        }
+        textureScale = typeof textureScale !== 'undefined' ? textureScale : 1;
         //Get the OBJ file
         if (!loadedOBJs.hasOwnProperty(objName)) {
               loadedOBJs[objName]={};
@@ -360,8 +375,42 @@ SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
     
     function TrunkObject(barkImg,trunkObj,textureScale,scale,positionMatrix,owner) {
         this.init(scale,positionMatrix,owner);
-        this.initTexturedObject(barkImg,trunkObj,textureScale);
+        this.initTexture(barkImg);
+        this.initOBJ(trunkObj,textureScale);
     }
     TrunkObject.prototype = Object.create(GenericObject.prototype);
     TrunkObject.prototype.constructor = TrunkObject;
+    
+    
+    
+    ////////////////////////////////
+    function FloorObject(floorImg,x1,z1,x2,z2,y) {
+        
+        this.init(1,(new Mat4()).translate([x1,y,z1]));
+        this.initTexture(floorImg);
+        
+        var lenX = Math.abs(x2-x1);
+        var lenZ = Math.abs(z2-z1);
+        var C=9;
+        var composedOBJ =  "v "+x1+" "+y+" "+z1+"\n"+
+                           "v "+x2+" "+y+" "+z1+"\n"+
+                           "v "+x2+" "+y+" "+z2+"\n"+
+                           "v "+x1+" "+y+" "+z2+"\n"+
+                           "vt 0 0"+"\n"+
+                           "vt "+C/lenX+" 0"+"\n"+
+                           "vt "+C/lenX+" "+C/lenZ+"\n"+
+                           "vt 0 "+C/lenZ+"\n"+
+                           "vn 0 1 0"+"\n"+
+                           "f 1/1/1 2/2/1 3/3/1 4/4/1";
+        
+        this.obj={};
+        this.obj.vertexPositionBuffer=null;
+        this.obj.vertexTextureCordBuffer=null;
+        this.obj.vertexIndexBuffer=null;
+        this.setUpOBJ(this.obj,composedOBJ);
+        
+        
+    }
+    FloorObject.prototype = Object.create(GenericObject.prototype);
+    FloorObject.prototype.constructor = FloorObject;
         
