@@ -200,12 +200,13 @@
             return;
         }
         textureScale = typeof textureScale !== 'undefined' ? textureScale : 1;
+        var refOBJName = objName + textureScale;
         //Get the OBJ file
-        if (!loadedOBJs.hasOwnProperty(objName)) {
-              loadedOBJs[objName]={};
-              loadedOBJs[objName].vertexPositionBuffer=null;
-              loadedOBJs[objName].vertexTextureCordBuffer=null;
-              loadedOBJs[objName].vertexIndexBuffer=null;
+        if (!loadedOBJs.hasOwnProperty(refOBJName)) {
+              loadedOBJs[refOBJName]={};
+              loadedOBJs[refOBJName].vertexPositionBuffer=null;
+              loadedOBJs[refOBJName].vertexTextureCordBuffer=null;
+              loadedOBJs[refOBJName].vertexIndexBuffer=null;
         
           var myself = this;
 	      var xhr = new XMLHttpRequest();
@@ -215,7 +216,7 @@
 	          if (xhr.status === 200) {
 	            //console.log(xhr.responseText);
 	            var objFile=xhr.responseText;
-	            myself.setUpOBJ(loadedOBJs[objName],objFile,textureScale);
+	            myself.setUpOBJ(loadedOBJs[refOBJName],objFile,textureScale);
 	          } else {
 	            console.error(xhr.statusText);
 	          }
@@ -226,7 +227,7 @@
 	      };
 	      xhr.send(null);
         }
-        this.obj=loadedOBJs[objName]
+        this.obj=loadedOBJs[refOBJName]
               
     }
 
@@ -384,46 +385,11 @@ SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
     
     
     ////////////////////////////////
-    function FloorObject(floorImg,floorObj,x1,z1,x2,z2,y) {
-        
-        this.init(1,(new Mat4()).translate([x1,y,z1]));
-        this.initTexture(floorImg);
-        this.initOBJ(floorObj);
-        
-        /*var lenX = Math.abs(x2-x1);
-        var lenZ = Math.abs(z2-z1);
-        var C=10;
-        /*var composedOBJ =  "v "+x1+" "+y+" "+z2+"\n"+
-                           "v "+x2+" "+y+" "+z2+"\n"+
-                           "v "+x1+" "+y+" "+z1+"\n"+
-                           "v "+x2+" "+y+" "+z1+"\n"+
-                           "vt 0 0"+"\n"+
-                           "vt "+C/lenX+" 0"+"\n"+
-                           "vt 0 "+C/lenZ+"\n"+
-                           "vt "+C/lenX+" "+C/lenZ+"\n"+
-                           "vn 0 1 0"+"\n"+
-                           "f 1/1/1 2/2/1 4/4/1 3/3/1";
-       /
-	var composedOBJ = "v -0.500000 -0.000000 0.500000\n"+
-"v 0.500000 -0.000000 0.500000\n"+
-"v -0.500000 0.000000 -0.500000\n"+
-"v 0.500000 0.000000 -0.500000\n"+
-"vt 0.000000 0.000000\n"+
-"vt 1.000000 0.000000\n"+
-"vt 0.000000 1.000000\n"+
-"vt 1.000000 1.000000\n"+
-"vn 0.000000 1.000000 0.000000\n"+
-"vn 0.000000 1.000000 0.000000\n"+
-"vn 0.000000 1.000000 0.000000\n"+
-"vn 0.000000 1.000000 0.000000";
-
-        this.obj={};
-        this.obj.vertexPositionBuffer=null;
-        this.obj.vertexTextsreCordBuffer=null;
-        this.obj.vertexIndexBuffer=null;
-        this.setUpOBJ(this.obj,composedOBJ);
-        */
-        
+    function FloorObject(img,obj,scale,positionMatrix,owner) {
+        this.init(scale,positionMatrix,owner);
+        this.initTexture(img);
+        var tex_width = 
+        this.initOBJ(obj,scale/2);
     }
     FloorObject.prototype = Object.create(GenericObject.prototype);
     FloorObject.prototype.constructor = FloorObject;

@@ -102,7 +102,8 @@ function webGLStart() {
     //var texturedCrayonOld= new TexturedObject('violetCrayon.png', path +'violet_crayon.obj',[0.0, 4.0, -30.0],1);
     texturedCrayon= new GenericObject('assests/violetCrayon.png', path +'assests/violet_crayon.obj',0.1,other_camera.lookingFrom);
     texturedBox= new GenericObject('assests/tire.bmp', path +'assests/color_box.obj',0.1,other_camera.lookingAt);
-    var ground = new TrunkObject('assests/forest-floor-terrain_0040_03_S_enl.jpg',path +'assests/unitfloor.obj',1,10,[0,0,0]);
+    var ground = new FloorObject('assests/forest-floor-terrain_0040_03_S_enl.jpg',path +'assests/unitfloor.obj',10,[0,0,0]);
+    var ground2 = new FloorObject('assests/forest-floor-terrain_0040_03_S_enl.jpg',path +'assests/unitfloor.obj',2,[0,0,-3]);
     var car= new CarObject('assests/car.bmp', path +'assests/car.obj','assests/tire.bmp', path +'assests/tire.obj',1.25,[-2.58, 0.015, -7.66]);
     car.rotation = car.rotation.rotateYAxis(-120)
     
@@ -119,6 +120,7 @@ function webGLStart() {
     axis2.rotation = axis2.rotation.rotateXAxis(90);
     
     sceneElements.push(ground);
+    sceneElements.push(ground2);
     
     
     sceneElements.push(texturedCrayon);
