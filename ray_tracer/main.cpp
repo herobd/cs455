@@ -39,12 +39,12 @@ int main (int argc, char** argv)
     Mat res(windowSize*scale,windowSize*scale,CV_32FC3);
     
     Vec3f rayFrom(0,0,viewDepth);
-    //for (int x=0; x<res.cols; x++)
-        //for (int y=0; y<res.rows; y++)
-        int x = res.cols/2;
-        int y = res.rows/2;
+    for (int x=0; x<res.cols; x++)
+        for (int y=0; y<res.rows; y++)
+        //int x = res.cols/2;
+        //int y = res.rows/2;
         {
-            Vec3f rayTo(x/scale,y/scale,0);
+            Vec3f rayTo((x-res.cols/2)/scale,(y-res.rows/2)/scale,0);
             Vec3f rayOrientation = rayTo-rayFrom;
             rayOrientation = rayOrientation/sqrt(rayOrientation[0]*rayOrientation[0] +
                                                  rayOrientation[1]*rayOrientation[1] +
@@ -68,6 +68,7 @@ Vec3f traceRay(int depth, Vec3f rayFrom, Vec3f rayOrientation, const vector<Scen
     if (depth++>DEPTH_LIMIT)
         return Vec3f(0,0,0);
     IntersectionEvent closestIntersection;
+    closestIntersection.dist=99999;
     closestIntersection.so=NULL;
     
     for (SceneObject* so : scene)
@@ -86,7 +87,6 @@ Vec3f traceRay(int depth, Vec3f rayFrom, Vec3f rayOrientation, const vector<Scen
         //cout << "returning bg" << endl;
         return bgColor;
     }
-    cout << "hit obj" << endl;
     
     Vec3f eye = -1*rayOrientation;///reverse ray so it is now Eye vector (going away from object)
     
@@ -108,11 +108,11 @@ Vec3f traceRay(int depth, Vec3f rayFrom, Vec3f rayOrientation, const vector<Scen
     else
     {
         color =   closestIntersection.so->diffuseColor.mul(lightAmb) + 
-                  lightFromSource.mul( closestIntersection.so->diffuseColor.mul(std::max(0.0,closestIntersection.normal.ddot(lightDir))) +
-                                       closestIntersection.so->specularColor.mul(pow(std::max(0.0,eye.ddot(dirOfSourceReflLight)),closestIntersection.so->phongConstant))
+                  lightFromSource.mul( closestIntersection.so->diffuseColor*(std::max(0.0,closestIntersection.normal.ddot(lightDir))) +
+                                       closestIntersection.so->specularColor*(pow(std::max(0.0,eye.ddot(dirOfSourceReflLight)),closestIntersection.so->phongConstant))
                                      ) + 
-                  lightFromRefl.mul(   closestIntersection.so->diffuseColor.mul(std::max(0.0,closestIntersection.normal.ddot(dirOfReflLight))) +
-                                       closestIntersection.so->specularColor.mul(pow(std::max(0.0,eye.ddot(dirOfReflLight)),closestIntersection.so->phongConstant))
+                  lightFromRefl.mul(   closestIntersection.so->diffuseColor*(std::max(0.0,closestIntersection.normal.ddot(dirOfReflLight))) +
+                                       closestIntersection.so->specularColor*(pow(std::max(0.0,eye.ddot(dirOfReflLight)),closestIntersection.so->phongConstant))
                                      ) /*+ ?*/;
     }
     //if (so.transparent)//Do we have transparent objects?

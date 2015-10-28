@@ -31,6 +31,12 @@ public:
     Vec3f diffuseColor;
     Vec3f specularColor;
     double phongConstant;
+    
+private:
+    static Vec3f normV(Vec3f v)
+    {
+        return v/sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+    }
 };
 
 class Sphere: public SceneObject

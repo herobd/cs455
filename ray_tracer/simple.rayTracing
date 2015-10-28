@@ -2,7 +2,9 @@ CameraLookAt 0 0 0
 CameraLookFrom 0 0 1.0
 CameraLookUp 0 1 0
 FieldOfView 28
-DirectionToLight 1 0 0 LightColor 1 1 1
+DirectionToLight -1 0 0 LightColor 1 1 1
 AmbientLight .1 .1 .1
 BackgroundColor .2 .2 .2
-Sphere Center 0 0 -.3 Radius .05 Material Diffuse 1 1 1 SpecularHighlight 1 1 1 PhongConstant 4
+Sphere Center .5 0 -3 Radius .5 Material Diffuse .5 1 .5 SpecularHighlight 1 1 1 PhongConstant 4
+Sphere Center 0 16 -3 Radius 10 Material Diffuse 1 .5 .5 SpecularHighlight 1 1 1 PhongConstant 4
+Sphere Center -.5 .5 -3.5 Radius .5 Material Reflective .75 .75 .75
