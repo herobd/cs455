@@ -57,6 +57,11 @@ public:
              double x3, double y3, double z3);
     virtual bool intersectionRay(Vec3f rayFrom, Vec3f rayOrientation, IntersectionEvent* retIntersection);
     
+private:
+    Vec3f v[3];
+    Vec3f p_n;
+    double d;
+    int numV;
 };
 
 #endif
