@@ -5,6 +5,8 @@
 #include "opencv2/core/core.hpp"
 #include <iostream>
 
+#define INDEX_AIR 1.0003
+
 using namespace std;
 using namespace cv;
 
@@ -16,6 +18,7 @@ typedef struct IntersectionEvent
     Vec3f point;
     Vec3f normal;
     double dist;
+    bool inside;
 } IntersectionEvent;
 
 

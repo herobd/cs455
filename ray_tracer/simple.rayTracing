@@ -8,7 +8,8 @@ BackgroundColor .2 .2 .2
 
 TXriangle .5 .5 -4   0 -.5 -4   -.5 .5 -4 Material Diffuse 0 0 1 SpecularHighlight 1 1 1 PhongConstant 4
 Triangle .5 0 -3   0 16 -3   -.5 .5 -3.5 Material Diffuse 1 1 0 SpecularHighlight 1 1 1 PhongConstant 4
-Sphere Center .5 0 -3 Radius .5 Material Tranparent .5 .5 .5 Index 1.5
+Sphere Center .5 0 -3 Radius .5 Material Transparent .75 .75 .75 Index 2.1
+Sphere Center .5 -.3 -6 Radius .5 Material Diffuse .25 1 .25 SpecularHighlight 1 1 1 PhongConstant 4
 Sphere Center 0 16 -3 Radius 10 Material Diffuse 1 .5 .5 SpecularHighlight 1 1 1 PhongConstant 4
 Sphere Center -.5 .5 -3.5 Radius .5 Material Reflective .75 .75 .75
 

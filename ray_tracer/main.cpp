@@ -10,10 +10,11 @@
 #include <regex>
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include <omp.h>
 
 #include "sceneobject.h"
 
-#define DEPTH_LIMIT 100
+#define DEPTH_LIMIT 400
 
 using namespace std;
 using namespace cv;
@@ -35,14 +36,16 @@ int main (int argc, char** argv)
     parseFile(argv[1],&scene,&windowSize,&viewDepth,&lightDir,&lightColor,&lightAmb,&bgColor);
     cout << "windowsize: " << windowSize << " viewDepth: " << viewDepth << endl;
     
-    double scale = 512.0/windowSize;
+    double scale = 516.0/windowSize;
     Mat res(windowSize*scale,windowSize*scale,CV_32FC3);
+    Mat out(windowSize*scale,windowSize*scale,CV_8UC3);
     
     Vec3f rayFrom(0,0,viewDepth);
+    #pragma omp parallel for num_threads(6)
     for (int x=0; x<res.cols; x++)
         for (int y=0; y<res.rows; y++)
-        //int x = res.cols/2;
-        //int y = res.rows/2;
+        //int x = 208;
+        //int y = 276;
         {
             Vec3f rayTo((x-res.cols/2)/scale,(y-res.rows/2)/scale,0);
             Vec3f rayOrientation = rayTo-rayFrom;
@@ -53,9 +56,15 @@ int main (int argc, char** argv)
             //assert(rayOrientation.norm()==1);
             Vec3f color = traceRay(0,rayFrom,rayOrientation,scene,lightDir,lightColor,lightAmb,bgColor);
             res.at<Vec3f>((res.rows-1)-y,x) = color;
+            out.at<Vec3b>((res.rows-1)-y,x) = Vec3b(color[0]*255,color[1]*255,color[2]*255);
         }
-    imwrite(argv[2],res);
+        
     imshow("render",res);
+    normalize(res, res, 0, 1, CV_MINMAX);
+    //Mat out;
+    //res.convertTo(out, CV_8UC3);
+    imwrite(argv[2],out);
+    
     waitKey();
     return 0;
 }
@@ -106,7 +115,27 @@ Vec3f traceRay(int depth, Vec3f rayFrom, Vec3f rayOrientation, const vector<Scen
         
         color = closestIntersection.so->specularColor.mul(lightFromRefl);
     }
-    
+    else if (closestIntersection.so->transparent)
+    {
+        double n_i = INDEX_AIR;
+        double n_t = closestIntersection.so->phongConstant;
+        if (closestIntersection.inside)
+        {
+            n_t = INDEX_AIR;
+            n_i = closestIntersection.so->phongConstant;
+        }
+        /*double theta = asin(norm((-rayOrientation).cross(closestIntersection.normal)))/(norm(rayOrientation)*norm(closestIntersection.normal));
+        double phi = asin(sin(theta)*n_i/n_t);
+        Vec3f u = closestIntersection.normal.cross(rayOrientation.cross(closestIntersection.normal));
+        u /= norm(u);
+        Vec3f refracDir = -1*sin(phi)*closestIntersection.normal + cos(phi)*u;*/
+        double inv_n = n_i/n_t;
+        double cos_new_theta = (-1*rayOrientation).ddot(closestIntersection.normal);
+        double cos_old_theta = (1-inv_n*inv_n*(1-cos_new_theta));
+        Vec3f refracDir = inv_n*(rayOrientation) - (cos_old_theta - inv_n*cos_new_theta)*closestIntersection.normal;
+        Vec3f lightFromRefr = traceRay(depth,closestIntersection.point,refracDir,scene,lightDir,lightColor,lightAmb,bgColor);
+        color = closestIntersection.so->specularColor.mul(lightFromRefr);
+    }
     else
     {
         color =   closestIntersection.so->diffuseColor.mul(lightAmb) + 
@@ -173,7 +202,7 @@ void parseFile(string filePath , vector<SceneObject*>* scene, double* windowSize
     regex_search(line,sm,fovExt);
     //cout << sm[1] << "," << sm[3] << "," << sm[5] << endl;
     double fov = stof(sm[1]);
-    *windowSize = 4* *viewDepth * tan((CV_PI*fov/180)/2);
+    *windowSize = 2* *viewDepth * tan((CV_PI*fov/180)/2);
     
     getline(file,line);
     regex lightExt("DirectionToLight (-?[0-9]*(\\.[0-9]+)?) (-?[0-9]*(\\.[0-9]+)?) (-?[0-9]*(\\.[0-9]+)?) LightColor (-?[0-9]*(\\.[0-9]+)?) (-?[0-9]*(\\.[0-9]+)?) (-?[0-9]*(\\.[0-9]+)?)");
@@ -206,7 +235,7 @@ void parseFile(string filePath , vector<SceneObject*>* scene, double* windowSize
     regex sphereExt("Sphere Center (-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +Radius +(-?[0-9]*(\\.[0-9]+)?)");
     regex triangleExt("Triangle +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?)");
     regex refExt("Material Reflective (-?[0-9]*(\\.[0-9]+)?) (-?[0-9]*(\\.[0-9]+)?) (-?[0-9]*(\\.[0-9]+)?)");
-    regex traExt("Material Transparent (-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +Index: +(-?[0-9]*(\\.[0-9]+)?)");
+    regex traExt("Material +Transparent +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +(-?[0-9]*(\\.[0-9]+)?) +Index +(-?[0-9]*(\\.[0-9]+)?)");
     regex difExt("Material Diffuse (-?[0-9]*(\\.[0-9]+)?) (-?[0-9]*(\\.[0-9]+)?) (-?[0-9]*(\\.[0-9]+)?) SpecularHighlight (-?[0-9]*(\\.[0-9]+)?) (-?[0-9]*(\\.[0-9]+)?) (-?[0-9]*(\\.[0-9]+)?) PhongConstant (-?[0-9]*(\\.[0-9]+)?)");
     while (getline(file,line))
     {
@@ -250,6 +279,8 @@ void parseFile(string filePath , vector<SceneObject*>* scene, double* windowSize
             so->phongConstant = stof(sm[13]);
             cout << "diffuse"<<endl;
         }
+        else 
+            cout << "no material found for: " << line << endl;
         
         scene->push_back(so);
     }

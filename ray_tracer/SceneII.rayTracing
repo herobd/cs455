@@ -1,7 +1,7 @@
 CameraLookAt 0 0 0
 CameraLookFrom 0 0 1.2
 CameraLookUp 0 1 0
-FieldOfView 55
+FieldOfView 110
 DirectionToLight 0 1 0 LightColor 1 1 1
 AmbientLight 0 0 0
 BackgroundColor .2 .2 .2

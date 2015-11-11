@@ -57,6 +57,7 @@ bool Sphere::intersectionRay(Vec3f rayFrom, Vec3f rayOrientation, IntersectionEv
             retIntersection->dist = t;//I think
             //assert( fabs(t - norm(retIntersection->point-rayFrom)) < .001);
             retIntersection->so = this;
+            retIntersection->inside = false;
             //cout << "sph intersection at dist: " << t <<endl;
         }
         
@@ -66,8 +67,27 @@ bool Sphere::intersectionRay(Vec3f rayFrom, Vec3f rayOrientation, IntersectionEv
         
         return true;
     }
-    //else
-        //cout << "ERROR: ray inside sphere, trans not implemented" << endl;
+    else
+    {
+        double t_ca = rayOrientation.ddot(OC);
+        double t_hc_sqr2 = radius*radius - pow(norm(OC),2) + t_ca*t_ca;
+        
+        if (t_hc_sqr2 < 0)
+            return false;
+        //else
+        double t = t_ca+sqrt(t_hc_sqr2);
+        
+        if (retIntersection != NULL)
+        {
+            retIntersection->point = rayFrom + t*rayOrientation;
+            retIntersection->normal = -1*(retIntersection->point-center)/radius;
+            retIntersection->dist = t;//I think
+            //assert( fabs(t - norm(retIntersection->point-rayFrom)) < .001);
+            retIntersection->so = this;
+            retIntersection->inside = true;
+            //cout << "sph intersection at dist: " << t <<endl;
+        }
+    }
     return false;
 }
 
@@ -163,6 +183,7 @@ bool Triangle::intersectionRay(Vec3f rayFrom, Vec3f rayOrientation, Intersection
             retIntersection->dist = t;//I think
             //assert( fabs(t - norm(intPt-rayFrom)) < .001);
             retIntersection->so = this;
+            retIntersection->inside = false;
             //cout << "tri intersection at dist: " << t <<endl;
         }
         return true;

@@ -1,9 +1,9 @@
 CXX = g++-4.9
-CXX_FLAGS = -std=c++11 -g -c -Wall
+CXX_FLAGS = -std=c++11 -g -c -Wall 
 
 SOURCES += main.cpp
 
-LIBS += -L/urs/local/include/opencv2 -lopencv_core -lopencv_highgui
+LIBS += -L/urs/local/include/opencv2 -lopencv_core -lopencv_highgui -fopenmp
 PROGRAM_NAME = rayTracer
 
 MAIN_OBJ_FILES =  main.o sceneobject.o
