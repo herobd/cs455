@@ -17,11 +17,13 @@ define( function() {
         triggerR_top : [],//array of functions(elapsed,b)
         start : [],//array of functions(elapsed,b)
         keyboard : {},//map, where key value is key code and value is function(b)
+        keyboardUp : {},//map, where key value is key code and value is function(b)
         
         hideGamePadMessage : function(){},
         showGamePadMessage : function(){},
         
         currentlyPressedKeys : {},
+        currentlyReleasedKeys : {},
         
         onTick : function(elapsed) {
             var gamepad = navigator.getGamepads()[this.player];
@@ -180,11 +182,13 @@ define( function() {
             for (var key=0; key<256; key++) {
                 //console.log(this.keyboard[key]);
                 for ( var todo of this.keyboard[key]) {todo(elapsed,this.currentlyPressedKeys[key]);}
+                for ( var todo of this.keyboardUp[key]) {if (this.currentlyReleasedKeys[key]) todo(elapsed);
+                                                         this.currentlyReleasedKeys[key] = false;}
             }
         }
     };    
     
-    for (var i=0; i<256; i++) {controller.keyboard[i]=[];}
+    for (var i=0; i<256; i++) {controller.keyboard[i]=[]; controller.keyboardUp[i]=[];}
     
     handleKeyDown = function (event) {
         controller.currentlyPressedKeys[event.keyCode] = true;
@@ -192,6 +196,7 @@ define( function() {
 
     handleKeyUp = function (event) {
       controller.currentlyPressedKeys[event.keyCode] = false;
+      controller.currentlyReleasedKeys[event.keyCode] = true;
     }
     document.onkeydown = handleKeyDown;
     document.onkeyup = handleKeyUp;

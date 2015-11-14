@@ -38,7 +38,7 @@ int main (int argc, char** argv)
     
     double scale = 516.0/windowSize;
     Mat res(windowSize*scale,windowSize*scale,CV_32FC3);
-    Mat out(windowSize*scale,windowSize*scale,CV_8UC3);
+    //Mat out(windowSize*scale,windowSize*scale,CV_8UC3);
     
     Vec3f rayFrom(0,0,viewDepth);
     #pragma omp parallel for num_threads(6)
@@ -56,13 +56,18 @@ int main (int argc, char** argv)
             //assert(rayOrientation.norm()==1);
             Vec3f color = traceRay(0,rayFrom,rayOrientation,scene,lightDir,lightColor,lightAmb,bgColor);
             res.at<Vec3f>((res.rows-1)-y,x) = color;
-            out.at<Vec3b>((res.rows-1)-y,x) = Vec3b(color[0]*255,color[1]*255,color[2]*255);
+            //out.at<Vec3b>((res.rows-1)-y,x) = Vec3b(std::min(std::max((int)(color[0]*255),0),255),std::min(std::max((int)(color[1]*255),0),255),std::min(std::max((int)(color[2]*255),0),255));
         }
         
     imshow("render",res);
-    normalize(res, res, 0, 1, CV_MINMAX);
-    //Mat out;
+    normalize(res, res, 0, 255, CV_MINMAX);
+    Mat out(windowSize*scale,windowSize*scale,CV_8UC3);
     //res.convertTo(out, CV_8UC3);
+    for (int x=0; x<res.cols; x++)
+        for (int y=0; y<res.rows; y++)
+        {
+            out.at<Vec3b>((res.rows-1)-y,x) = Vec3b(res.at<Vec3f>((res.rows-1)-y,x)[0],res.at<Vec3f>((res.rows-1)-y,x)[1],res.at<Vec3f>((res.rows-1)-y,x)[2]);
+        }
     imwrite(argv[2],out);
     
     waitKey();

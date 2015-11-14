@@ -11,10 +11,15 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
 
     return {
         shaderProgram : null,
+        framebuffer : null,
+        colorTexture : null,
+        depthTexture : null,
 
         initGL : function (canvas) {
             try {
                 this.gl=canvas.getContext("experimental-webgl");
+                var depthTextureExt = this.gl.getExtension("WEBKIT_WEBGL_depth_texture"); // Or browser-appropriate prefix
+                if(!depthTextureExt) { console.log('ERROR, no depth textures');}
                 //this.gl = WebGLDebugUtils.makeDebugContext(this.gl, undefined, validateNoneOfTheArgsAreUndefined);
                 this.viewportWidth = canvas.width;
                 this.viewportHeight = canvas.height;
@@ -31,6 +36,29 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
                 this.gl.clearDepth(1.0);
                 this.gl.enable(this.gl.DEPTH_TEST);
                 this.gl.depthFunc(this.gl.LEQUAL);
+                
+                this.framebuffer = this.gl.createFramebuffer();
+                this.colorTexture = this.gl.createTexture();
+                this.depthTexture = this.gl.createTexture();
+                // Create a color texture
+                
+                this.gl.bindTexture(this.gl.TEXTURE_2D, this.colorTexture);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+                this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+                //this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 0, 0, this.viewportWidth, this.viewportHeight, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, null);
+
+                // Create the depth texture
+                
+                this.gl.bindTexture(this.gl.TEXTURE_2D, this.depthTexture);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.NEAREST);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.NEAREST);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE);
+                this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
+                this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.DEPTH_COMPONENT, this.gl.DEPTH_COMPONENT, this.gl.UNSIGNED_SHORT, null);
+                //this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.DEPTH_COMPONENT, 0, 0, this.viewportWidth, this.viewportHeight, 0, this.gl.DEPTH_COMPONENT, this.gl.UNSIGNED_SHORT, null);
             }
 
         },
@@ -84,11 +112,20 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.gl.useProgram(this.shaderProgram);
             this.shaderProgram.vertexPositionAttribute = this.gl.getAttribLocation(this.shaderProgram, "aVertexPosition");
             this.gl.enableVertexAttribArray(this.shaderProgram.vertexPositionAttribute);
+            
+            this.shaderProgram.vertexNormalAttribute = this.gl.getAttribLocation(this.shaderProgram, "aVertexNormal");
+            this.gl.enableVertexAttribArray(this.shaderProgram.vertexNormalAttribute);
+            
             this.shaderProgram.textureCoordAttribute = this.gl.getAttribLocation(this.shaderProgram, "aTextureCoord");
             this.gl.enableVertexAttribArray(this.shaderProgram.textureCoordAttribute);
+            
             this.shaderProgram.pMatrixUniform = this.gl.getUniformLocation(this.shaderProgram, "uPMatrix");
             this.shaderProgram.mvMatrixUniform = this.gl.getUniformLocation(this.shaderProgram, "uMVMatrix");
             this.shaderProgram.samplerUniform = this.gl.getUniformLocation(this.shaderProgram, "uSampler");
+            
+            this.shaderProgram.ambientColorUniform = this.gl.getUniformLocation(this.shaderProgram, "uAmbientColor");
+            this.shaderProgram.lightingDirectionUniform = this.gl.getUniformLocation(this.shaderProgram, "uLightingDirection");
+            this.shaderProgram.directionalColorUniform = this.gl.getUniformLocation(this.shaderProgram, "uDirectionalColor");
         },
         
         //JS is single threaded, so I think this doesn't have a race condition
@@ -112,7 +149,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.gl.bindTexture(this.gl.TEXTURE_2D, null);
         },
         
-        initBuffer : function (toFill,verticesFlat,textureCordsFlat,vertexIndices,count) {
+        initBuffer : function (toFill,verticesFlat,normalsFlat,textureCordsFlat,vertexIndices,count) {
             toFill.vertexPositionBuffer = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, toFill.vertexPositionBuffer);
             this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(verticesFlat), this.gl.STATIC_DRAW);
@@ -124,6 +161,12 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(textureCordsFlat), this.gl.STATIC_DRAW);
             toFill.vertexTextureCordBuffer.itemSize = 2;
             toFill.vertexTextureCordBuffer.numItems = count;
+            
+            toFill.vertexNormalBuffer = this.gl.createBuffer();
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, toFill.vertexNormalBuffer);
+            this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(normalsFlat), this.gl.STATIC_DRAW);
+            toFill.vertexNormalBuffer.itemSize = 3;
+            toFill.vertexNormalBuffer.numItems = count;
             
             toFill.vertexIndexBuffer = this.gl.createBuffer();
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, toFill.vertexIndexBuffer);
@@ -141,6 +184,8 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             mat4.perspective(45, this.viewportWidth / this.viewportHeight, 0.1, 100.0, pMatrix);
             this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform, false, pMatrix);
             
+            //??
+            this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, perspectiveMat.multiply(moveMat).flat())
         },
         
         drawTexturedObjectPart : function  (texturedObject,perspectiveMat) {
@@ -150,6 +195,9 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, texturedObject.obj.vertexTextureCordBuffer);
             this.gl.vertexAttribPointer(this.shaderProgram.textureCoordAttribute, texturedObject.obj.vertexTextureCordBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
+            
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, texturedObject.obj.vertexNormalBuffer);
+            this.gl.vertexAttribPointer(this.shaderProgram.vertexNormalAttribute, texturedObject.obj.vertexNormalBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
             
             this.gl.activeTexture(this.gl.TEXTURE0);
             this.gl.bindTexture(this.gl.TEXTURE_2D, texturedObject.texture.glTexture);
@@ -163,6 +211,68 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
         clearScene : function () {
             this.gl.viewport(0, 0, this.viewportWidth, this.viewportHeight);
             this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+        },
+        
+        setLighting : function() {
+            this.gl.uniform3f(
+                this.shaderProgram.ambientColorUniform,
+                0.5,0.5,0.5
+            );
+            var lightingDirection = (new Vec([0,-1,0])).normalize().scale(-1);
+            this.gl.uniform3f(
+                this.shaderProgram.lightingDirectionUniform, 
+                lightingDirection[0],lightingDirection[1],lightingDirection[2]
+            );
+            this.gl.uniform3f(
+                this.shaderProgram.directionalColorUniform,
+                1.0,1.0,1.0
+            );
+        },
+        
+        getDepthPre : function (points) {
+
+            
+
+            
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, this.framebuffer);
+            this.gl.viewport(0, 0, this.viewportWidth, this.viewportHeight);
+            this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.COLOR_ATTACHMENT0, this.gl.TEXTURE_2D, this.colorTexture, 0);
+            this.gl.framebufferTexture2D(this.gl.FRAMEBUFFER, this.gl.DEPTH_ATTACHMENT, this.gl.TEXTURE_2D, this.depthTexture, 0);
+            
+            //this.gl.drawBuffer(this.gl.NONE);
+            
+            //this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+            //this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, framebuffer);
+            //this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+            //this.gl.viewport(0, 0, this.viewportWidth, this.viewportHeight);
+        },
+        
+        getDepthPost : function (points) {
+        
+        
+            var pixels=null;
+            if (this.gl.checkFramebufferStatus(this.gl.FRAMEBUFFER) == this.gl.FRAMEBUFFER_COMPLETE) {
+                
+                  pixels = new Uint8Array(this.width * this.height);
+                  var format = this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_FORMAT);
+                  var type =  this.gl.getParameter(this.gl.IMPLEMENTATION_COLOR_READ_TYPE);
+                  console.log(format);
+                  console.log(type);
+                  console.log(this.gl.DEPTH_COMPONENT);
+                  console.log(this.gl.UNSIGNED_SHORT);
+                  console.log(this.gl.RGBA);
+                  console.log(this.gl.UNSIGNED_BYTE);//this.gl.DEPTH_COMPONENT, this.gl.UNSIGNED_SHORT
+                  this.gl.readPixels(0, 0, this.width, this.height, format, type, pixels);
+                  console.log(pixels);
+            }
+            this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
+            this.gl.viewport(0, 0, this.viewportWidth, this.viewportHeight);
+            /*for (point of points) {
+                texPos.xyz = (gl_Position.xyz / gl_Position.w) * 0.5 + 0.5;
+                float depthFromZBuffer = texture2D(uTexDepthBuffer, texPos.xy).x;
+            }*/
+            
+            return pixels;
         }
     };
 });

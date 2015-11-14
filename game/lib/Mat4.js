@@ -58,6 +58,10 @@ var noz=false;
         return this;
     };
 
+
+/////////////////////////////////////
+
+
     function Mat4(copy) {
         if (copy === undefined) { 
             this.values = [ [1, 0, 0, 0],
@@ -229,6 +233,10 @@ var noz=false;
                     ret.push(this.get(row,col));
                 }
         return ret;
+    };
+    
+    Mat4.prototype.posVec = function() {
+        return new Vec([this.get(0,3),this.get(1,3),this.get(2,3)]);
     };
     
     Mat4.prototype.inverse = function() {

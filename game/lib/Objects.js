@@ -33,10 +33,10 @@
         	 
         	 return this.owner.getDrawMatrix().multiply(this.position).multiply(this.rotation).multiply(this.scaleM);
     };
-    GenericObject.prototype.move = function(vec) {
-        	 this.position = this.position.translate(vec);
-        	 this.location = vec;
-    };
+    //GenericObject.prototype.move = function(vec) {
+    //    	 this.position = this.position.translate(vec);
+    //    	 this.location = vec;
+    //};
     GenericObject.prototype.getParts = function() {
         	 return this.parts;
     };
@@ -52,6 +52,7 @@
         var vertices = [];
         var textureCoords = [];
         var faces = [];
+        var normals = [];
         
         //parse obj file
         for (var line of lines) {
@@ -62,6 +63,9 @@
         	    countVertices++;
         	} else if (tokens[0] === 'vt') {
         	    textureCoords.push([textureScale*parseFloat(tokens[1]), textureScale*parseFloat(tokens[2])]);
+        	    //console.log("textureCord: " + textureCoords[textureCoords.length-1][0] + "," + textureCoords[textureCoords.length-1][1]);
+    	    } else if (tokens[0] === 'vn') {
+        	    normals.push([parseFloat(tokens[1]), parseFloat(tokens[2]), parseFloat(tokens[3])]);
         	    //console.log("textureCord: " + textureCoords[textureCoords.length-1][0] + "," + textureCoords[textureCoords.length-1][1]);
         	} else if (tokens[0] === 'f') {
         	    tokens.shift();
@@ -80,6 +84,7 @@
         //Next we recreate the vertexes for each one in each triangle we draw.
         
         var verticesFlat=[];
+        var normalsFlat=[];
         var textureCordsFlat=[];
         var vertexIndices=[];
         var count=0;
@@ -87,9 +92,12 @@
         for (face of faces) {
             
             var keyVert=null;
+            var keyNorm=null;
             var keyTextureCord=null;
             var prevVert=null;
+            var prevNorm=null;
             var prevTextureCord=null;
+            
             
             //For each polygon, we assume the points are in a clockwise/counterclockwise order
             //Thus we draw triangles, all sharing the first vertex listed in the obj file
@@ -97,17 +105,18 @@
                 var pieces = vertex.split('/');
                 if (keyVert==null) {//first vertex, all triangles share this
                     keyVert = vertices[parseInt(pieces[0])-1];
-                    
+                    keyNorm = normals[parseInt(pieces[2])-1];
                     keyTextureCord = textureCoords[parseInt(pieces[1])-1];
                 } else if (prevVert==null) {//set up the "previous" for our first triangle
                     prevVert = vertices[parseInt(pieces[0])-1];
-                    
+                    prevNorm = normals[parseInt(pieces[2])-1];
                     prevTextureCord = textureCoords[parseInt(pieces[1])-1];
                 } else {
                     var thisVert = vertices[parseInt(pieces[0])-1];
-                    
+                    var thisNorm = normals[parseInt(pieces[2])-1];
                     var thisTextureCord = textureCoords[parseInt(pieces[1])-1];
-                    
+                    //if (thisNorm === undefined)
+                        //console.log(normals)
                     //var logger="";
                     //logger = logger.concat("face: (");
                     
@@ -145,6 +154,23 @@
                         //logger = logger.concat(n + ",");
                     }
                     //logger = logger.concat("] ... " + verticesFlat.length + "\n");
+                    
+                    for (n of keyNorm) {
+                        normalsFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    //logger = logger.concat("][");
+                    for (n of prevNorm) {
+                        normalsFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    //logger = logger.concat("][");
+                    for (n of thisNorm) {
+                        normalsFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    
+                    
                     //console.log(logger);
                     
                     //This is similar to stripping, but for each polygon
@@ -157,15 +183,15 @@
             }
         }
         //console.log(count);
-        if (count <100)
-        {
-        console.log(count);
-        console.log(verticesFlat);
-        console.log(textureCordsFlat);
-        console.log(vertexIndices);
-        }
+        //if (count <100)
+        //{
+        //console.log(count);
+        //console.log(verticesFlat);
+        //console.log(textureCordsFlat);
+        //console.log(vertexIndices);
+        //}
         
-        myGL.initBuffer(toFill,verticesFlat,textureCordsFlat,vertexIndices,count);
+        myGL.initBuffer(toFill,verticesFlat,normalsFlat,textureCordsFlat,vertexIndices,count);
     };
     
     var loadedTextures = {};
@@ -339,10 +365,11 @@
 
 function SolidObject(img,obj,radius,scale,positionMatrix,owner) {
     GenericObject.call(this,img,obj,scale,positionMatrix,owner);
-    this.boundingRadius = radius;
+    this.boundingRadius = radius*scale;
 }
 SolidObject.prototype = Object.create(GenericObject.prototype);
 SolidObject.prototype.constructor = SolidObject;
+SolidObject.prototype.activate = function() {};
 SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
 {
     var futurePos = this.position.translate(myMoveVec);
@@ -354,6 +381,8 @@ SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
                        Math.pow(futurePos.get(2,3)-otherSolidObject.position.get(2,3),2) ) ;
     //console.log(dist);
     if (futDist-(this.boundingRadius+otherSolidObject.boundingRadius) <= 0 && futDist<curDist) {
+        this.activate();
+        otherSolidObject.activate();
         return (new Vec([otherSolidObject.position.get(0,3)-this.position.get(0,3),
                        0,
                        otherSolidObject.position.get(2,3)-this.position.get(2,3)])).normalize();
@@ -364,33 +393,108 @@ SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
 
 //////////////////////////////////
     
-    function TreeObject(barkImg,trunkObj,scale,positionMatrix,owner) {
-        SolidObject.call(this,null,null,0.7,scale,positionMatrix,owner);
-        this.trunk = new TrunkObject(barkImg,trunkObj,15,0.3,[0.2,0,0],this);
-        this.parts = [this.trunk];
-        
+function TreeObject(barkImg,trunkObj,scale,positionMatrix,owner) {
+    SolidObject.call(this,null,null,0.7,scale,positionMatrix,owner);
+    this.trunk = new TrunkObject(barkImg,trunkObj,15,0.3,[0.2,0,0],this);
+    this.parts = [this.trunk];
+    
+}
+TreeObject.prototype = Object.create(SolidObject.prototype);
+TreeObject.prototype.constructor = TreeObject;
+
+
+function TrunkObject(barkImg,trunkObj,textureScale,scale,positionMatrix,owner) {
+    this.init(scale,positionMatrix,owner);
+    this.initTexture(barkImg);
+    this.initOBJ(trunkObj,textureScale);
+}
+TrunkObject.prototype = Object.create(GenericObject.prototype);
+TrunkObject.prototype.constructor = TrunkObject;
+
+//////////////////////////////////
+function Ghost(gameState,moveSpeed,ghostImg,ghostObj,scale,positionMatrix,owner) {
+    SolidObject.call(this,ghostImg,ghostObj,0.5,scale,positionMatrix,owner);
+    this.gameStateRef = gameState;
+    this.moveSpeed=moveSpeed;
+}
+Ghost.prototype = Object.create(SolidObject.prototype);
+Ghost.prototype.constructor = Ghost;
+Ghost.prototype.activate = function() {
+        this.gameStateRef.killed();
+}
+Ghost.prototype.animate = function(elapsed) {
+    var toPlayer = (this.gameStateRef.playerLocation().minus(this.position.posVec())).normalize();
+    var angleToPlayer = Math.atan2(toPlayer[2],toPlayer[0]);
+    this.rotation = (new Mat4()).rotateYAxis(-180.0*angleToPlayer/Math.PI);
+    this.position = this.position.translate(toPlayer.scale(elapsed*this.moveSpeed));
+    this.collisionCheck(this.gameStateRef.camera,toPlayer.scale(elapsed*this.moveSpeed));
+}
+////////////////////////////
+function Grave(gameState,inFront,graveImg,graveObj,ghostImg,ghostObj,scale,positionMatrix,owner) {
+    SolidObject.call(this,graveImg,graveObj,0.6,scale,positionMatrix,owner);
+    this.gameStateRef = gameState;
+    this.inFront = inFront;
+    this.ghostImg=ghostImg;
+    this.ghostObj=ghostObj;
+    this.state=0;
+}
+Grave.prototype = Object.create(SolidObject.prototype);
+Grave.prototype.constructor = Grave;
+Grave.prototype.seen = function(calling) {
+    if (this.state ==0) {
+        this.state=1;
+        var moveSpeed;
+        var location;
+        if (this.inFront) {
+            moveSpeed=0.03;
+            location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(0.5).plus(this.position.posVec());
+        }
+        else {
+            moveSpeed=0.1;
+            location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(3.0).plus(this.position.posVec());
+        }
+        var chaser= new Ghost(this.gameStateRef,moveSpeed,this.ghostImg, this.ghostObj,0.2,location);
+        chaser.spawner=this;
+        this.gameStateRef.collidableObjects.push(chaser);
+        for (var i=0; i<this.gameStateRef.solidObjects.length; i++) {
+            //console.log(obj.spawner);
+            if (this.gameStateRef.collidableObjects[i]===calling) {
+                this.gameStateRef.collidableObjects.splice(i,1);
+                break;
+            }
+        }
     }
-    TreeObject.prototype = Object.create(SolidObject.prototype);
-    TreeObject.prototype.constructor = TreeObject;
-    
-    
-    function TrunkObject(barkImg,trunkObj,textureScale,scale,positionMatrix,owner) {
-        this.init(scale,positionMatrix,owner);
-        this.initTexture(barkImg);
-        this.initOBJ(trunkObj,textureScale);
+}
+Grave.prototype.activate = function() {
+    if (this.state<2) {
+        this.state=2;
+        for (var i=0; i<this.gameStateRef.solidObjects.length; i++) {
+            //console.log(obj.spawner);
+            if (this.gameStateRef.collidableObjects[i].spawner===this) {
+                this.gameStateRef.collidableObjects.splice(i,1);
+                break;
+            }
+        }
     }
-    TrunkObject.prototype = Object.create(GenericObject.prototype);
-    TrunkObject.prototype.constructor = TrunkObject;
-    
-    
-    
-    ////////////////////////////////
-    function FloorObject(img,obj,scale,positionMatrix,owner) {
-        this.init(scale,positionMatrix,owner);
-        this.initTexture(img);
-        var tex_width = 
-        this.initOBJ(obj,scale/2);
-    }
-    FloorObject.prototype = Object.create(GenericObject.prototype);
-    FloorObject.prototype.constructor = FloorObject;
+}
+
+////////////////
+function Trip(grave,blankImg,circleObj,scale,positionMatrix,owner) {
+    SolidObject.call(this,blankImg,circleObj,1.0,scale,positionMatrix,owner);
+    this.grave = grave;
+}
+Trip.prototype = Object.create(SolidObject.prototype);
+Trip.prototype.constructor = Trip;
+Trip.prototype.activate = function() {
+    this.grave.seen(this);
+}
+////////////////////////////////
+function FloorObject(img,obj,scale,positionMatrix,owner) {
+    this.init(scale,positionMatrix,owner);
+    this.initTexture(img);
+    var tex_width = 
+    this.initOBJ(obj,scale/2);
+}
+FloorObject.prototype = Object.create(GenericObject.prototype);
+FloorObject.prototype.constructor = FloorObject;
         
