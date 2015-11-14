@@ -370,5 +370,25 @@ var noz=false;
         return ret;
     };
     
+    Mat4.prototype.toInverseMat3x3_transpose_flat = function() {
+        var det = this.get(0,0)*this.get(1,1)*this.get(2,2) +
+                  this.get(0,1)*this.get(1,2)*this.get(2,0) +
+                  this.get(0,2)*this.get(1,0)*this.get(2,1) -
+                  this.get(2,0)*this.get(1,1)*this.get(0,2) -
+                  this.get(2,1)*this.get(1,2)*this.get(0,0) -
+                  this.get(2,2)*this.get(1,0)*this.get(0,1);
+        var a00 = (this.get(1,1)*this.get(2,2)-this.get(2,1)*this.get(1,2))/det;
+        var a01 = (this.get(0,2)*this.get(2,1)-this.get(2,2)*this.get(0,1))/det;
+        var a02 = (this.get(0,1)*this.get(1,2)-this.get(1,1)*this.get(0,2))/det;
+        var a10 = (this.get(1,2)*this.get(2,0)-this.get(2,2)*this.get(1,0))/det;
+        var a11 = (this.get(0,0)*this.get(2,2)-this.get(2,0)*this.get(0,2))/det;
+        var a12 = (this.get(0,2)*this.get(1,0)-this.get(1,2)*this.get(0,0))/det;
+        var a20 = (this.get(1,0)*this.get(2,1)-this.get(2,0)*this.get(1,1))/det;
+        var a21 = (this.get(0,1)*this.get(2,0)-this.get(2,1)*this.get(0,0))/det;
+        var a22 = (this.get(0,0)*this.get(1,1)-this.get(1,0)*this.get(0,1))/det;
+        var ret = [a00, a10, a20, a01, a11, a21, a02, a12, a22];
+        return ret;
+    };
+    
     //return Mat4;
 //});
