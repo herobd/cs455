@@ -122,6 +122,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.shaderProgram.pMatrixUniform = this.gl.getUniformLocation(this.shaderProgram, "uPMatrix");
             this.shaderProgram.mvMatrixUniform = this.gl.getUniformLocation(this.shaderProgram, "uMVMatrix");
             this.shaderProgram.samplerUniform = this.gl.getUniformLocation(this.shaderProgram, "uSampler");
+            this.shaderProgram.nMatrixUniform = this.gl.getUniformLocation(this.shaderProgram, "uNMatrix");
             
             this.shaderProgram.ambientColorUniform = this.gl.getUniformLocation(this.shaderProgram, "uAmbientColor");
             this.shaderProgram.lightingDirectionUniform = this.gl.getUniformLocation(this.shaderProgram, "uLightingDirection");
@@ -188,6 +189,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             var nmMatrixFlat = moveMat. toInverseMat3x3_transpose_flat();
             this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, nmMatrixFlat)
             //this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, moveMat.flat());
+            //this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, [1,0,0,0,1,0,0,0,1]);
         },
         
         drawTexturedObjectPart : function  (texturedObject,perspectiveMat) {
@@ -220,7 +222,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
                 this.shaderProgram.ambientColorUniform,
                 0.5,0.5,0.5
             );
-            var lightingDirection = (new Vec([0,1,0])).normalize().scale(-1);
+            var lightingDirection = (new Vec([0,1,0])).normalize();//scale(-1);
             this.gl.uniform3f(
                 this.shaderProgram.lightingDirectionUniform, 
                 lightingDirection[0],lightingDirection[1],lightingDirection[2]
