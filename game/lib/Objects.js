@@ -155,7 +155,7 @@
                     }
                     //logger = logger.concat("] ... " + verticesFlat.length + "\n");
                     
-                    for (n of keyNorm) {
+                    /*for (n of keyNorm) {
                         normalsFlat.push(n);
                         //logger = logger.concat(n + ",");
                     }
@@ -166,6 +166,21 @@
                     }
                     //logger = logger.concat("][");
                     for (n of thisNorm) {
+                        normalsFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }*/
+                    
+                    for (n of [0,1,0]) {
+                        normalsFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    //logger = logger.concat("][");
+                    for (n of [0,1,0]) {
+                        normalsFlat.push(n);
+                        //logger = logger.concat(n + ",");
+                    }
+                    //logger = logger.concat("][");
+                    for (n of [0,1,0]) {
                         normalsFlat.push(n);
                         //logger = logger.concat(n + ",");
                     }
