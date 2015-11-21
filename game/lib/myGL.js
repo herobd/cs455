@@ -186,7 +186,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform, false, pMatrix);
             
             //??
-            var nmMatrixFlat = moveMat. toInverseMat3x3_transpose_flat();
+            var nmMatrixFlat = moveMat.toInverseMat3x3_flat();
             this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, nmMatrixFlat)
             //this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, moveMat.flat());
             //this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, [1,0,0,0,1,0,0,0,1]);
@@ -217,19 +217,19 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
         },
         
-        setLighting : function() {
+        setLighting : function(ambientColor,lightingDir,lightingColor) {
             this.gl.uniform3f(
                 this.shaderProgram.ambientColorUniform,
-                0.5,0.5,0.5
+                ambientColor[0],ambientColor[1],ambientColor[2]
             );
-            var lightingDirection = (new Vec([0,1,0])).normalize();//scale(-1);
+            var lightingDirection = (new Vec(lightingDir)).normalize();//scale(-1);
             this.gl.uniform3f(
                 this.shaderProgram.lightingDirectionUniform, 
                 lightingDirection[0],lightingDirection[1],lightingDirection[2]
             );
             this.gl.uniform3f(
                 this.shaderProgram.directionalColorUniform,
-                1.0,0.2,0.2
+                lightingColor[0],lightingColor[1],lightingColor[2]
             );
         },
         

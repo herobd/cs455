@@ -57,6 +57,10 @@ var noz=false;
         }
         return this;
     };
+    
+    Vec.prototype.flat = function() {
+        return [this[0], this[1], this[2]];
+    };
 
 
 /////////////////////////////////////
@@ -370,7 +374,7 @@ var noz=false;
         return ret;
     };
     
-    Mat4.prototype.toInverseMat3x3_transpose_flat = function() {
+    Mat4.prototype.toInverseMat3x3_flat = function() {
         var det = this.get(0,0)*this.get(1,1)*this.get(2,2) +
                   this.get(0,1)*this.get(1,2)*this.get(2,0) +
                   this.get(0,2)*this.get(1,0)*this.get(2,1) -
@@ -386,8 +390,8 @@ var noz=false;
         var a20 = (this.get(1,0)*this.get(2,1)-this.get(2,0)*this.get(1,1))/det;
         var a21 = (this.get(0,1)*this.get(2,0)-this.get(2,1)*this.get(0,0))/det;
         var a22 = (this.get(0,0)*this.get(1,1)-this.get(1,0)*this.get(0,1))/det;
-        var ret = [a00, a10, a20, a01, a11, a21, a02, a12, a22];
-        //var ret = [a00, a01, a02, a10, a11, a12, a20, a21, a22];
+        //var ret = [a00, a10, a20, a01, a11, a21, a02, a12, a22];//transpose
+        var ret = [a00, a01, a02, a10, a11, a12, a20, a21, a22];
         return ret;
     };
     

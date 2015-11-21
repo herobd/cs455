@@ -17,10 +17,10 @@
         
         if (positionMatrix !== undefined) {
             this.position = (new Mat4()).translate(positionMatrix);//This is relative to owner
-            this.location = positionMatrix;
+            //this.location = positionMatrix;
         } else {
             this.position = new Mat4();//This is relative to owner
-            this.location = [0,0,0];
+            //this.location = [0,0,0];
         }
         
         this.scale=scale;
@@ -33,10 +33,10 @@
         	 
         	 return this.owner.getDrawMatrix().multiply(this.position).multiply(this.rotation).multiply(this.scaleM);
     };
-    //GenericObject.prototype.move = function(vec) {
-    //    	 this.position = this.position.translate(vec);
-    //    	 this.location = vec;
-    //};
+    GenericObject.prototype.move = function(vec) {
+        	 this.position = this.position.translate(vec);
+        	 //this.location = vec;
+    };
     GenericObject.prototype.getParts = function() {
         	 return this.parts;
     };
@@ -240,6 +240,7 @@
             this.obj = null;
             return;
         }
+        var path = window.location.pathname.substring(1);
         textureScale = typeof textureScale !== 'undefined' ? textureScale : 1;
         var refOBJName = objName + textureScale;
         //Get the OBJ file
@@ -251,7 +252,7 @@
         
           var myself = this;
 	      var xhr = new XMLHttpRequest();
-	      xhr.open("GET", "/"+objName, true);
+	      xhr.open("GET", "/"+path+objName, true);
 	      xhr.onload = function (e) {
 	        if (xhr.readyState === 4) {
 	          if (xhr.status === 200) {
@@ -381,11 +382,40 @@
 function SolidObject(img,obj,radius,scale,positionMatrix,owner) {
     GenericObject.call(this,img,obj,scale,positionMatrix,owner);
     this.boundingRadius = radius*scale;
+    this.plane=false;
 }
 SolidObject.prototype = Object.create(GenericObject.prototype);
 SolidObject.prototype.constructor = SolidObject;
 SolidObject.prototype.activate = function() {};
 SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
+{
+    
+    
+    var futurePos = this.position.translate(myMoveVec);
+    var curDist = Math.sqrt( Math.pow(this.position.get(0,3)-otherSolidObject.position.get(0,3),2) + 
+                      // Math.pow(this.position.get(1,3)-otherSolidObject.position.get(1,3),2) + 
+                       Math.pow(this.position.get(2,3)-otherSolidObject.position.get(2,3),2) ) ;
+    var futDist = Math.sqrt( Math.pow(futurePos.get(0,3)-otherSolidObject.position.get(0,3),2) + 
+                      // Math.pow(futurePos.get(1,3)-otherSolidObject.position.get(1,3),2) + 
+                       Math.pow(futurePos.get(2,3)-otherSolidObject.position.get(2,3),2) ) ;
+    //console.log(dist);
+    if (futDist-(this.boundingRadius+otherSolidObject.boundingRadius) <= 0 && futDist<curDist) {
+        
+        if (otherSolidObject.plane)
+            return otherSolidObject.collisionCheckPlane(this,myMoveVec.scale(-1));
+        if (this.plane)
+            return this.collisionCheckPlane(otherSolidObject,myMoveVec);
+        
+        this.activate();
+        otherSolidObject.activate();
+        return (new Vec([otherSolidObject.position.get(0,3)-this.position.get(0,3),
+                       0,
+                       otherSolidObject.position.get(2,3)-this.position.get(2,3)])).normalize();
+    }
+    else
+        return null;
+}
+SolidObject.prototype.collisionCheckPlane = function(otherSolidObject,myMoveVec)
 {
     var futurePos = this.position.translate(myMoveVec);
     var curDist = Math.sqrt( Math.pow(this.position.get(0,3)-otherSolidObject.position.get(0,3),2) + 
@@ -405,6 +435,13 @@ SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
     else
         return null;
 }
+/////////////////////
+function Wall(barkImg,trunkObj,scale,positionMatrix,owner) {
+    SolidObject.call(this,null,null,0.7,scale,positionMatrix,owner);
+    this.plane=true;
+}
+Wall.prototype = Object.create(SolidObject.prototype);
+Wall.prototype.constructor = Wall;
 
 //////////////////////////////////
     
@@ -452,6 +489,7 @@ function Grave(gameState,inFront,graveImg,graveObj,ghostImg,ghostObj,scale,posit
     this.ghostImg=ghostImg;
     this.ghostObj=ghostObj;
     this.state=0;
+    this.trips = [];
 }
 Grave.prototype = Object.create(SolidObject.prototype);
 Grave.prototype.constructor = Grave;
@@ -471,7 +509,7 @@ Grave.prototype.seen = function(calling) {
         var chaser= new Ghost(this.gameStateRef,moveSpeed,this.ghostImg, this.ghostObj,0.2,location);
         chaser.spawner=this;
         this.gameStateRef.collidableObjects.push(chaser);
-        for (var i=0; i<this.gameStateRef.solidObjects.length; i++) {
+        for (var i=0; i<this.gameStateRef.collidableObjects.length; i++) {
             //console.log(obj.spawner);
             if (this.gameStateRef.collidableObjects[i]===calling) {
                 this.gameStateRef.collidableObjects.splice(i,1);
@@ -483,7 +521,7 @@ Grave.prototype.seen = function(calling) {
 Grave.prototype.activate = function() {
     if (this.state<2) {
         this.state=2;
-        for (var i=0; i<this.gameStateRef.solidObjects.length; i++) {
+        for (var i=0; i<this.gameStateRef.collidableObjects.length; i++) {
             //console.log(obj.spawner);
             if (this.gameStateRef.collidableObjects[i].spawner===this) {
                 this.gameStateRef.collidableObjects.splice(i,1);
@@ -492,11 +530,15 @@ Grave.prototype.activate = function() {
         }
     }
 }
+Grave.prototype.setTripLoc = function(scale,loc) {
+    this.trips.push( {scale: scale, loc:loc} );
+}
 
 ////////////////
 function Trip(grave,blankImg,circleObj,scale,positionMatrix,owner) {
     SolidObject.call(this,blankImg,circleObj,1.0,scale,positionMatrix,owner);
     this.grave = grave;
+    grave.setTripLoc(scale,positionMatrix);
 }
 Trip.prototype = Object.create(SolidObject.prototype);
 Trip.prototype.constructor = Trip;
