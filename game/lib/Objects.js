@@ -44,8 +44,9 @@
         	 //no animation
     };
     
-    GenericObject.prototype.setUpOBJ = function (toFill, file, textureScale) {
-        textureScale = typeof textureScale !== 'undefined' ? textureScale : 1;
+    GenericObject.prototype.setUpOBJ = function (toFill, file, textureScaleX, textureScaleY) {
+        textureScaleX = typeof textureScaleX !== 'undefined' ? textureScaleX : 1;
+        textureScaleY = typeof textureScaleY !== 'undefined' ? textureScaleY : textureScaleX;
 		
         var lines = file.split('\n');
         var countVertices;
@@ -62,7 +63,7 @@
         	    //console.log("vertex: " + vertices[vertices.length-1][0] + "," + vertices[vertices.length-1][1] + "," + vertices[vertices.length-1][2]);
         	    countVertices++;
         	} else if (tokens[0] === 'vt') {
-        	    textureCoords.push([textureScale*parseFloat(tokens[1]), textureScale*parseFloat(tokens[2])]);
+        	    textureCoords.push([textureScaleX*parseFloat(tokens[1]), textureScaleY*parseFloat(tokens[2])]);
         	    //console.log("textureCord: " + textureCoords[textureCoords.length-1][0] + "," + textureCoords[textureCoords.length-1][1]);
     	    } else if (tokens[0] === 'vn') {
         	    normals.push([parseFloat(tokens[1]), parseFloat(tokens[2]), parseFloat(tokens[3])]);
@@ -235,14 +236,15 @@
               
     }
     
-    GenericObject.prototype.initOBJ = function (objName,textureScale) {
+    GenericObject.prototype.initOBJ = function (objName,textureScaleX,textureScaleY) {
         if (objName === null) {
             this.obj = null;
             return;
         }
         var path = window.location.pathname.substring(1);
-        textureScale = typeof textureScale !== 'undefined' ? textureScale : 1;
-        var refOBJName = objName + textureScale;
+        textureScaleX = typeof textureScaleX !== 'undefined' ? textureScaleX : 1;
+        textureScaleY = typeof textureScaleX !== 'undefined' ? textureScaleY : textureScaleX;
+        var refOBJName = objName + textureScaleX+'_'+textureScaleY;
         //Get the OBJ file
         if (!loadedOBJs.hasOwnProperty(refOBJName)) {
               loadedOBJs[refOBJName]={};
@@ -258,7 +260,7 @@
 	          if (xhr.status === 200) {
 	            //console.log(xhr.responseText);
 	            var objFile=xhr.responseText;
-	            myself.setUpOBJ(loadedOBJs[refOBJName],objFile,textureScale);
+	            myself.setUpOBJ(loadedOBJs[refOBJName],objFile,textureScaleX,textureScaleY);
 	          } else {
 	            console.error(xhr.statusText);
 	          }
@@ -412,33 +414,47 @@ SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
                        0,
                        otherSolidObject.position.get(2,3)-this.position.get(2,3)])).normalize();
     }
-    else
-        return null;
+    else if (futDist-(this.boundingRadius+otherSolidObject.boundingRadius) <= 0) {
+        if (otherSolidObject.plane)
+            return otherSolidObject.collisionCheckPlane(this,myMoveVec.scale(-1));
+        if (this.plane)
+            return this.collisionCheckPlane(otherSolidObject,myMoveVec);
+    }
+    return null;
 }
 SolidObject.prototype.collisionCheckPlane = function(otherSolidObject,myMoveVec)
 {
-    var futurePos = this.position.translate(myMoveVec);
-    var curDist = Math.sqrt( Math.pow(this.position.get(0,3)-otherSolidObject.position.get(0,3),2) + 
-                      // Math.pow(this.position.get(1,3)-otherSolidObject.position.get(1,3),2) + 
-                       Math.pow(this.position.get(2,3)-otherSolidObject.position.get(2,3),2) ) ;
-    var futDist = Math.sqrt( Math.pow(futurePos.get(0,3)-otherSolidObject.position.get(0,3),2) + 
-                      // Math.pow(futurePos.get(1,3)-otherSolidObject.position.get(1,3),2) + 
-                       Math.pow(futurePos.get(2,3)-otherSolidObject.position.get(2,3),2) ) ;
-    //console.log(dist);
-    if (futDist-(this.boundingRadius+otherSolidObject.boundingRadius) <= 0 && futDist<curDist) {
+    var futurePos = this.position.translate(myMoveVec).posVec();
+    var thisNormal = this.rotation.multiplyPoint([0,0,1]);//we assum this is standard orientation for walls
+    var d = -1*this.position.posVec().dot(thisNormal);
+    var d_future = -1*futurePos.dot(thisNormal);
+    var curDist = otherSolidObject.position.posVec().dot(thisNormal)+d;
+    var futDist = otherSolidObject.position.posVec().dot(thisNormal)+d_future;
+    //console.log("cur = "+curDist);
+    //console.log("fut = "+futDist);
+    if (curDist!==0 && curDist*futDist<=0) {
         this.activate();
         otherSolidObject.activate();
-        return (new Vec([otherSolidObject.position.get(0,3)-this.position.get(0,3),
-                       0,
-                       otherSolidObject.position.get(2,3)-this.position.get(2,3)])).normalize();
+        if (curDist>0)
+            return thisNormal;
+        else
+            return thisNormal.scale(-1);
     }
     else
         return null;
 }
 /////////////////////
-function Wall(barkImg,trunkObj,scale,positionMatrix,owner) {
-    SolidObject.call(this,null,null,0.7,scale,positionMatrix,owner);
+function Wall(img,obj,rotation,scale,positionMatrix,owner) {
+    this.init(scale,positionMatrix,owner);
+    this.initTexture(img);
+    //var tex_width = 
+    var setScale=2;
+    this.initOBJ(obj,scale/2,setScale/2);
+    this.rotationAngle=rotation;
+    this.rotation = (new Mat4()).rotateYAxis(rotation);
     this.plane=true;
+    this.boundingRadius = 1*scale;
+    this.scaleM = (new Mat4()).scale([scale,setScale,setScale]);
 }
 Wall.prototype = Object.create(SolidObject.prototype);
 Wall.prototype.constructor = Wall;
@@ -549,7 +565,7 @@ Trip.prototype.activate = function() {
 function FloorObject(img,obj,scale,positionMatrix,owner) {
     this.init(scale,positionMatrix,owner);
     this.initTexture(img);
-    var tex_width = 
+    //var tex_width = 
     this.initOBJ(obj,scale/2);
 }
 FloorObject.prototype = Object.create(GenericObject.prototype);

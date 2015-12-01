@@ -47,6 +47,8 @@ gameState.playerLocation = function() {return this.camera.lookingFrom;};
 var assets={
     floorImg : 'assests/forest-floor-terrain_0040_03_S_enl.jpg',
     floorObj : 'assests/unitfloor.obj',
+    wallImg : 'assests/BrickOldOvergrown256.jpg',
+    wallObj : 'assests/unitwall.obj',
     barkImg : 'assests/bark_sqr.png',
     trunkObj : 'assests/trunk.obj',
     graveImg : 'assests/violetCrayon.png',
@@ -60,7 +62,7 @@ var assets={
 
 gameState.store = function(sceneElements,world) {
     world['StartingLocation']=this.startingLoc.flat();
-    world['StartingLoooking']=this.startingLook.flat();;
+    world['StartingLooking']=this.startingLook.flat();
     for (ele in sceneElements) {
         if (sceneElements.hasOwnProperty(ele)) {
             
@@ -73,6 +75,10 @@ gameState.store = function(sceneElements,world) {
                 world[ele].type="Floor";
             else if (sceneElements[ele] instanceof TreeObject)
                 world[ele].type="Tree";
+            else if (sceneElements[ele] instanceof Wall) {
+                world[ele].type="Wall";
+                world[ele].rotationAngle = sceneElements[ele].rotationAngle;
+            }
             else if (sceneElements[ele] instanceof Grave) {
                 world[ele].type="Grave";
                 world[ele].trips = sceneElements[ele].trips;
@@ -85,9 +91,9 @@ gameState.store = function(sceneElements,world) {
 
 gameState.saveLevel = function() {
     var json = {};
-    store(this.sceneElements, json);
-    store(this.solidObjects, json);
-    store(this.collidableObjects, json);
+    this.store(this.sceneElements, json);
+    this.store(this.solidObjects, json);
+    this.store(this.collidableObjects, json);
     
     //json.assets = gameState.assests; 
     
@@ -95,13 +101,17 @@ gameState.saveLevel = function() {
 }
 
 //These act as handles for level building
-gameState.addFloor = function(scale,location) {
+gameState.addFloor = function(name,scale,location) {
     this.sceneElements[name] = (new FloorObject(assets.floorImg,assets.floorObj,scale,location));              
 }
-gameState.addTree = function(scale,location) {
+gameState.addWall = function(name,rotation,scale,location) {
+    this.solidObjects[name] = (new Wall(assets.wallImg,assets.wallObj,rotation,scale,location));              
+}
+
+gameState.addTree = function(name,scale,location) {
     this.solidObjects[name] = (new TreeObject(assets.barkImg,assets.trunkObj,scale,location));              
 }
-gameState.addGrave = function(scale,location,inFront,trips) {
+gameState.addGrave = function(name,scale,location,inFront,trips) {
     this.solidObjects[name] = (new Grave(gameState,inFront,assets.graveImg,assets.graveObj,assets.ghostImg,assets.ghostObj,scale,location));
     var tripCount=0;
     for (trip of trips) {
@@ -127,11 +137,13 @@ gameState.loadLevel = function(loc) {
             myself.dying = -1;
             for (name in loaded) {
                 if (loaded[name].type=="Floor") 
-                    myself.addFloor(loaded[name].scale,loaded[name].location);
+                    myself.addFloor(name,loaded[name].scale,loaded[name].location);
                 else if (loaded[name].type=="Tree") 
-                    myself.addTree(loaded[name].scale,loaded[name].location);
+                    myself.addTree(name,loaded[name].scale,loaded[name].location);
+                else if (loaded[name].type=="Wall") 
+                    myself.addWall(name,loaded[name].rotationAngle,loaded[name].scale,loaded[name].location);
                 else if (loaded[name].type=="Grave") 
-                    myself.addGrave(loaded[name].scale,loaded[name].location,loaded[name].inFront,loaded[name].trips);
+                    myself.addGrave(name,loaded[name].scale,loaded[name].location,loaded[name].inFront,loaded[name].trips);
                 else if (name==="StartingLocation") 
                     myself.startingLoc= new Vec(loaded[name]);
                 else if (name==="StartingLooking") 

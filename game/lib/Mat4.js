@@ -87,17 +87,17 @@ var noz=false;
             this.values[row][col]=value;
         };
     Mat4.prototype.multiply = function(otherMat) {
-            var toRet = new Mat4();
-            for (var row=0; row<4; row++)
-                for (var col=0; col<4; col++) {
-                    var val=0;
-                    for (var i=0; i<4; i++) {
-                        val += this.get(row,i)*otherMat.get(i,col);
-                    }
-                    toRet.values[row][col]=val;
+        var toRet = new Mat4();
+        for (var row=0; row<4; row++)
+            for (var col=0; col<4; col++) {
+                var val=0;
+                for (var i=0; i<4; i++) {
+                    val += this.get(row,i)*otherMat.get(i,col);
                 }
-            return toRet;
-        };
+                toRet.values[row][col]=val;
+            }
+        return toRet;
+    };
     
     Mat4.prototype.translate = function(vec) {
             var trans = new Mat4();
@@ -241,6 +241,20 @@ var noz=false;
     
     Mat4.prototype.posVec = function() {
         return new Vec([this.get(0,3),this.get(1,3),this.get(2,3)]);
+    };
+    
+    Mat4.prototype.multiplyPoint = function(point) {
+        var augPoint = [point[0],point[1],point[2],1];
+        var toRet = [0,0,0,1];
+        for (var row=0; row<4; row++)
+            for (var col=0; col<4; col++) {
+                var val=0;
+                for (var i=0; i<4; i++) {
+                    val += this.get(row,i)*augPoint[i];
+                }
+                toRet[row]=val;
+            }
+        return new Vec([toRet[0]/toRet[3], toRet[1]/toRet[3], toRet[2]/toRet[3]]);
     };
     
     Mat4.prototype.inverse = function() {
