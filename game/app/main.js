@@ -59,10 +59,13 @@ var assets={
     graveObj : 'assests/violet_crayon.obj',
     ghostImg : 'assests/cloth_text.png',
     ghostObj : 'assests/wraith_text.obj',
+    ghostSoundUp : 'assests/Monster Growl-SoundBible.com-344645592.mp3',
+    ghostSoundDown : 'assests/Zombie Moan-SoundBible.com-565291980.wav',
     tripImg : 'assests/violetCrayon.png',
     tripObj : 'assests/circle.obj',
     goalImg : 'assests/violetCrayon.png',
-    goalObj : 'assests/violet_crayon.obj'
+    goalObj : 'assests/violet_crayon.obj',
+    goalSound : 'assests/Japanese Temple Bell Small-SoundBible.com-113624364.mp3'
 }
     
 
@@ -121,11 +124,11 @@ gameState.addTree = function(name,scale,location) {
 }
 
 gameState.addGoal = function(name,scale,location) {
-    this.solidObjects[name] = (new Goal(this,assets.goalImg,assets.goalObj,scale,location));              
+    this.solidObjects[name] = (new Goal(this,assets.goalImg,assets.goalObj,assets.goalSound,scale,location));              
 }
 
 gameState.addGrave = function(name,scale,location,inFront,trips) {
-    this.solidObjects[name] = (new Grave(gameState,inFront,assets.graveImg,assets.graveOnImg,assets.graveObj,assets.ghostImg,assets.ghostObj,scale,location));
+    this.solidObjects[name] = (new Grave(gameState,inFront,assets.graveImg,assets.graveOnImg,assets.graveObj,assets.ghostImg,assets.ghostObj,assets.ghostSoundUp,assets.ghostSoundDown,scale,location));
     var tripCount=0;
     for (trip of trips) {
         this.collidableObjects.push(new Trip(gameState.solidObjects[name],assets.tripImg,assets.tripObj,trip.scale,trip.loc)); 
@@ -215,14 +218,20 @@ function drawTexturedObject(texturedObject,perspectiveMat) {
     
 
 var lastTime = 0;
-function animate(sceneElements) {
+function animate() {
     var timeNow = new Date().getTime();
     if (lastTime != 0) {
         var elapsed = timeNow - lastTime;
         controller.onTick(elapsed);
-        for (ele in sceneElements) 
-            if (sceneElements.hasOwnProperty(ele))
-                sceneElements[ele].animate(elapsed);
+        for (ele in gameState.sceneElements) 
+            if (gameState.sceneElements.hasOwnProperty(ele))
+                gameState.sceneElements[ele].animate(elapsed);
+        for (ele in gameState.solidObjects) 
+            if (gameState.solidObjects.hasOwnProperty(ele))
+                gameState.solidObjects[ele].animate(elapsed);
+        for (ele in gameState.collidableObjects) 
+            if (gameState.collidableObjects.hasOwnProperty(ele))
+                gameState.collidableObjects[ele].animate(elapsed);
         /*if (logger++>200) {
              logger=0;
              console.log('FROM: x=' + gameState.camera.lookingFrom[0] + ', y=' + gameState.camera.lookingFrom[1] + ', z=' + gameState.camera.lookingFrom[2]);
@@ -428,7 +437,7 @@ function webGLStart() {
             for (ele of gameState.sceneElements) {
             	drawTexturedObject(ele,perspectiveMat);
             }
-            animate(gameState.solidObjects);
+            //animate(gameState.solidObjects);
             for (ele of gameState.solidObjects) {
             	drawTexturedObject(ele,perspectiveMat);
             }
@@ -485,22 +494,15 @@ function webGLStart() {
     
     tick = function() {
         requestAnimFrame(tick);
+        //console.log('dying: '+gameState.dying)
+        //console.log('changingLevel: '+gameState.changingLevel)
         
-        if (gameState.dying < 0 && gameState.changingLevel ==-1) {
-            animate(gameState.sceneElements);
-            animate(gameState.solidObjects);
-            animate(gameState.collidableObjects);
-            
-            myGL.setLighting([0.5,0.5,0.5], 
-                             [0.3,1,0], 
-                             [0.3,0.24,0.3]);
-        }
-        else if (this.changingLevel==-2) {
+        if (this.changingLevel==-2) {
             myGL.setLighting([0.5*3,0.5*3,0.5*3], 
                              [0.3,1,0], 
                              [0.3,0.24,0.3]);
         }
-        else if (gameState.changingLevel++ < gameState.changingLevel_time) {
+        else if (gameState.changingLevel>=0 && gameState.changingLevel++ < gameState.changingLevel_time) {
             var mult = 1+ 2*(gameState.changingLevel)/(gameState.changingLevel_time)
             myGL.setLighting([0.5*mult,0.5*mult,0.5*mult], 
                              [0.3,1,0], 
@@ -509,13 +511,23 @@ function webGLStart() {
         else if (gameState.changingLevel >= gameState.changingLevel_time) {
             gameState.loadLevel(gameState.currentLevelFile);
         }
-        else if (gameState.dying++ < gameState.dying_time) {
+        else if (gameState.dying >=0 && gameState.dying++ < gameState.dying_time) {
             myGL.setLighting([0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time], 
                              [0.3,1,0], 
                              [0.3,0.24*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.3*(gameState.dying_time-gameState.dying)/gameState.dying_time]);
+           
         }
         else if (gameState.dying >= gameState.dying_time) {
             gameState.restartLevel();
+        }
+        else {
+            //animate(gameState.sceneElements);
+            //animate(gameState.solidObjects);
+            //animate(gameState.collidableObjects);
+            animate();
+            myGL.setLighting([0.5,0.5,0.5], 
+                             [0.3,1,0], 
+                             [0.3,0.24,0.3]);
         }
         
         myGL.clearScene();
