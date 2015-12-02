@@ -63,8 +63,8 @@ var assets={
     ghostSoundDown : 'assests/Zombie Moan-SoundBible.com-565291980.wav',
     tripImg : 'assests/violetCrayon.png',
     tripObj : 'assests/circle.obj',
-    goalImg : 'assests/violetCrayon.png',
-    goalObj : 'assests/violet_crayon.obj',
+    goalImg : 'assests/marble_texture.jpg',
+    goalObj : 'assests/goal.obj',
     goalSound : 'assests/Japanese Temple Bell Small-SoundBible.com-113624364.mp3'
 }
     
