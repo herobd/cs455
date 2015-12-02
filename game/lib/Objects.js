@@ -453,7 +453,7 @@ function Wall(img,obj,rotation,scale,positionMatrix,owner) {
     this.rotationAngle=rotation;
     this.rotation = (new Mat4()).rotateYAxis(rotation);
     this.plane=true;
-    this.boundingRadius = 1*scale;
+    this.boundingRadius = 0.5*scale;
     this.scaleM = (new Mat4()).scale([scale,setScale,setScale]);
 }
 Wall.prototype = Object.create(SolidObject.prototype);
@@ -498,12 +498,14 @@ Ghost.prototype.animate = function(elapsed) {
     this.collisionCheck(this.gameStateRef.camera,toPlayer.scale(elapsed*this.moveSpeed));
 }
 ////////////////////////////
-function Grave(gameState,inFront,graveImg,graveOnImg,graveObj,ghostImg,ghostObj,scale,positionMatrix,owner) {
+function Grave(gameState,inFront,graveImg,graveOnImg,graveObj,ghostImg,ghostObj,soundUp,soundDown,scale,positionMatrix,owner) {
     SolidObject.call(this,graveOnImg,graveObj,0.6,scale,positionMatrix,owner);
     this.gameStateRef = gameState;
     this.inFront = inFront;
     this.ghostImg=ghostImg;
     this.ghostObj=ghostObj;
+    this.soundUp=soundUp;
+    this.soundDown=soundDown;
     this.state=0;
     this.trips = [];
     
@@ -519,11 +521,11 @@ Grave.prototype.seen = function(calling) {
         var moveSpeed;
         var location;
         if (this.inFront) {
-            moveSpeed=0.03;
+            moveSpeed=0.0025;
             location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(0.5).plus(this.position.posVec());
         }
         else {
-            moveSpeed=0.1;
+            moveSpeed=0.004;
             location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(3.0).plus(this.position.posVec());
         }
         var chaser= new Ghost(this.gameStateRef,moveSpeed,this.ghostImg, this.ghostObj,0.2,location);
@@ -537,6 +539,9 @@ Grave.prototype.seen = function(calling) {
             }
         }
         this.texture=this.onTexture;
+        var snd = new Audio(this.soundUp); // buffers automatically when created
+        snd.playbackRate=2;
+        snd.play();
     }
 }
 Grave.prototype.activate = function() {
@@ -550,6 +555,8 @@ Grave.prototype.activate = function() {
             }
         }
         this.texture=this.offTexture;
+        var snd = new Audio(this.soundDown); // buffers automatically when created
+        snd.play();
     }
 }
 Grave.prototype.setTripLoc = function(scale,loc) {
@@ -568,14 +575,22 @@ Trip.prototype.activate = function() {
     this.grave.seen(this);
 }
 ////////////////
-function Goal(gameStateRef,goalImg,goalObj,scale,positionMatrix,owner) {
+function Goal(gameStateRef,goalImg,goalObj,sound,scale,positionMatrix,owner) {
     SolidObject.call(this,goalImg,goalObj,1.0,scale,positionMatrix,owner);
     this.gameStateRef=gameStateRef;
+    this.sound=sound;
 }
 Goal.prototype = Object.create(SolidObject.prototype);
 Goal.prototype.constructor = Goal;
 Goal.prototype.activate = function() {
+    var snd = new Audio(this.sound); // buffers automatically when created
+    snd.play();
     this.gameStateRef.nextLevel();
+}
+Goal.prototype.animate = function(elapsed) {
+    console.log(this.gameStateRef.playerLocation().distance(this.position.posVec()))
+    var spinSpeed = 0.1+0.6*(8-Math.min(8,this.gameStateRef.playerLocation().distance(this.position.posVec())));
+    this.rotation = this.rotation.rotateYAxis(spinSpeed*elapsed);
 }
 ////////////////////////////////
 function FloorObject(img,obj,scale,positionMatrix,owner) {
