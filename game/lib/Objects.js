@@ -498,14 +498,18 @@ Ghost.prototype.animate = function(elapsed) {
     this.collisionCheck(this.gameStateRef.camera,toPlayer.scale(elapsed*this.moveSpeed));
 }
 ////////////////////////////
-function Grave(gameState,inFront,graveImg,graveObj,ghostImg,ghostObj,scale,positionMatrix,owner) {
-    SolidObject.call(this,graveImg,graveObj,0.6,scale,positionMatrix,owner);
+function Grave(gameState,inFront,graveImg,graveOnImg,graveObj,ghostImg,ghostObj,scale,positionMatrix,owner) {
+    SolidObject.call(this,graveOnImg,graveObj,0.6,scale,positionMatrix,owner);
     this.gameStateRef = gameState;
     this.inFront = inFront;
     this.ghostImg=ghostImg;
     this.ghostObj=ghostObj;
     this.state=0;
     this.trips = [];
+    
+    this.onTexture = this.texture;
+    this.initTexture(graveImg);
+    this.offTexture = this.texture;
 }
 Grave.prototype = Object.create(SolidObject.prototype);
 Grave.prototype.constructor = Grave;
@@ -532,6 +536,7 @@ Grave.prototype.seen = function(calling) {
                 break;
             }
         }
+        this.texture=this.onTexture;
     }
 }
 Grave.prototype.activate = function() {
@@ -544,6 +549,7 @@ Grave.prototype.activate = function() {
                 break;
             }
         }
+        this.texture=this.offTexture;
     }
 }
 Grave.prototype.setTripLoc = function(scale,loc) {
@@ -560,6 +566,16 @@ Trip.prototype = Object.create(SolidObject.prototype);
 Trip.prototype.constructor = Trip;
 Trip.prototype.activate = function() {
     this.grave.seen(this);
+}
+////////////////
+function Goal(gameStateRef,goalImg,goalObj,scale,positionMatrix,owner) {
+    SolidObject.call(this,goalImg,goalObj,1.0,scale,positionMatrix,owner);
+    this.gameStateRef=gameStateRef;
+}
+Goal.prototype = Object.create(SolidObject.prototype);
+Goal.prototype.constructor = Goal;
+Goal.prototype.activate = function() {
+    this.gameStateRef.nextLevel();
 }
 ////////////////////////////////
 function FloorObject(img,obj,scale,positionMatrix,owner) {

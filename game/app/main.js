@@ -25,12 +25,15 @@ var gameState={};
 gameState.killed = function() {this.dying=0; console.log("kkkiiiillllllleeeedddd!!!");};
 gameState.dying = -1;
 gameState.dying_time = 50.0;
+gameState.changingLevel = -1;
+gameState.changingLevel_time = 50.0;
 gameState.sceneElements = {};
 gameState.solidObjects = {};
 gameState.collidableObjects = [];
 gameState.levels = ['test.level','test2.level'];
 gameState.currentLevel = -1;
 gameState.currentLevelFile = 'none';
+
 
 gameState.camera = new SolidObject(null,null,0.3,1,new Vec([0,0,0.3]));
     
@@ -51,12 +54,15 @@ var assets={
     wallObj : 'assests/unitwall.obj',
     barkImg : 'assests/bark_sqr.png',
     trunkObj : 'assests/trunk.obj',
-    graveImg : 'assests/violetCrayon.png',
+    graveImg : 'assests/tire.bmp',
+    graveOnImg : 'assests/violetCrayon.png',
     graveObj : 'assests/violet_crayon.obj',
     ghostImg : 'assests/cloth_text.png',
     ghostObj : 'assests/wraith_text.obj',
     tripImg : 'assests/violetCrayon.png',
-    tripObj : 'assests/circle.obj'
+    tripObj : 'assests/circle.obj',
+    goalImg : 'assests/violetCrayon.png',
+    goalObj : 'assests/violet_crayon.obj'
 }
     
 
@@ -75,6 +81,8 @@ gameState.store = function(sceneElements,world) {
                 world[ele].type="Floor";
             else if (sceneElements[ele] instanceof TreeObject)
                 world[ele].type="Tree";
+            else if (sceneElements[ele] instanceof Goal)
+                world[ele].type="Goal";
             else if (sceneElements[ele] instanceof Wall) {
                 world[ele].type="Wall";
                 world[ele].rotationAngle = sceneElements[ele].rotationAngle;
@@ -111,8 +119,13 @@ gameState.addWall = function(name,rotation,scale,location) {
 gameState.addTree = function(name,scale,location) {
     this.solidObjects[name] = (new TreeObject(assets.barkImg,assets.trunkObj,scale,location));              
 }
+
+gameState.addGoal = function(name,scale,location) {
+    this.solidObjects[name] = (new Goal(this,assets.goalImg,assets.goalObj,scale,location));              
+}
+
 gameState.addGrave = function(name,scale,location,inFront,trips) {
-    this.solidObjects[name] = (new Grave(gameState,inFront,assets.graveImg,assets.graveObj,assets.ghostImg,assets.ghostObj,scale,location));
+    this.solidObjects[name] = (new Grave(gameState,inFront,assets.graveImg,assets.graveOnImg,assets.graveObj,assets.ghostImg,assets.ghostObj,scale,location));
     var tripCount=0;
     for (trip of trips) {
         this.collidableObjects.push(new Trip(gameState.solidObjects[name],assets.tripImg,assets.tripObj,trip.scale,trip.loc)); 
@@ -120,6 +133,7 @@ gameState.addGrave = function(name,scale,location,inFront,trips) {
 }
 
 gameState.loadLevel = function(loc) {
+    this.changingLevel=-2;
     var path = window.location.pathname.substring(1)+'levels/';
     var xhr = new XMLHttpRequest();
     xhr.open("GET", "/"+path+loc, true);
@@ -135,11 +149,14 @@ gameState.loadLevel = function(loc) {
             myself.solidObjects = {};
             myself.collidableObjects = [];
             myself.dying = -1;
+            myself.changingLevel=-1;
             for (name in loaded) {
                 if (loaded[name].type=="Floor") 
                     myself.addFloor(name,loaded[name].scale,loaded[name].location);
                 else if (loaded[name].type=="Tree") 
                     myself.addTree(name,loaded[name].scale,loaded[name].location);
+                else if (loaded[name].type=="Goal") 
+                    myself.addGoal(name,loaded[name].scale,loaded[name].location);
                 else if (loaded[name].type=="Wall") 
                     myself.addWall(name,loaded[name].rotationAngle,loaded[name].scale,loaded[name].location);
                 else if (loaded[name].type=="Grave") 
@@ -173,8 +190,8 @@ gameState.restartLevel = function() {
 
 gameState.nextLevel = function() {
     this.currentLevelFile = this.levels[++this.currentLevel]
-    
-    this.loadLevel(this.currentLevelFile);
+    this.changingLevel=0;
+    //this.loadLevel(this.currentLevelFile);
 }
 
 
@@ -469,7 +486,7 @@ function webGLStart() {
     tick = function() {
         requestAnimFrame(tick);
         
-        if (gameState.dying < 0) {
+        if (gameState.dying < 0 && gameState.changingLevel ==-1) {
             animate(gameState.sceneElements);
             animate(gameState.solidObjects);
             animate(gameState.collidableObjects);
@@ -478,13 +495,26 @@ function webGLStart() {
                              [0.3,1,0], 
                              [0.3,0.24,0.3]);
         }
+        else if (this.changingLevel==-2) {
+            myGL.setLighting([0.5*3,0.5*3,0.5*3], 
+                             [0.3,1,0], 
+                             [0.3,0.24,0.3]);
+        }
+        else if (gameState.changingLevel++ < gameState.changingLevel_time) {
+            var mult = 1+ 2*(gameState.changingLevel)/(gameState.changingLevel_time)
+            myGL.setLighting([0.5*mult,0.5*mult,0.5*mult], 
+                             [0.3,1,0], 
+                             [0.3,0.24,0.3]);
+        }
+        else if (gameState.changingLevel >= gameState.changingLevel_time) {
+            gameState.loadLevel(gameState.currentLevelFile);
+        }
         else if (gameState.dying++ < gameState.dying_time) {
             myGL.setLighting([0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time], 
                              [0.3,1,0], 
                              [0.3,0.24*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.3*(gameState.dying_time-gameState.dying)/gameState.dying_time]);
         }
-        else
-        {
+        else if (gameState.dying >= gameState.dying_time) {
             gameState.restartLevel();
         }
         
