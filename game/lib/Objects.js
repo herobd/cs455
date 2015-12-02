@@ -588,8 +588,9 @@ Goal.prototype.activate = function() {
     this.gameStateRef.nextLevel();
 }
 Goal.prototype.animate = function(elapsed) {
-    //console.log(elapsed)
-    this.rotation = this.rotation.rotateYAxis(0.1*elapsed);
+    console.log(this.gameStateRef.playerLocation().distance(this.position.posVec()))
+    var spinSpeed = 0.1+0.6*(8-Math.min(8,this.gameStateRef.playerLocation().distance(this.position.posVec())));
+    this.rotation = this.rotation.rotateYAxis(spinSpeed*elapsed);
 }
 ////////////////////////////////
 function FloorObject(img,obj,scale,positionMatrix,owner) {

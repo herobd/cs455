@@ -43,6 +43,9 @@ var noz=false;
     Vec.prototype.dot = function(other) {
         return this[0]*other[0] + this[1]*other[1] + this[2]*other[2];
     };
+    Vec.prototype.distance = function(other) {
+        return Math.sqrt((this[0]-other[0])*(this[0]-other[0]) + (this[1]-other[1])*(this[1]-other[1]) + (this[2]-other[2])*(this[2]-other[2]));
+    };
     
     Vec.prototype.mag = function() {
         return Math.sqrt(this[0]*this[0] + this[1]*this[1] + this[2]*this[2]);;
