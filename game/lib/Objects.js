@@ -443,7 +443,7 @@ SolidObject.prototype.collisionCheckPlane = function(otherSolidObject,myMoveVec)
     else
         return null;
 }
-/////////////////////
+/////////////////////	
 function Wall(img,obj,rotation,scale,positionMatrix,owner) {
     this.init(scale,positionMatrix,owner);
     this.initTexture(img);
@@ -461,11 +461,14 @@ Wall.prototype.constructor = Wall;
 
 //////////////////////////////////
     
-function TreeObject(barkImg,trunkObj,scale,positionMatrix,owner) {
+function TreeObject(barkImg,trunkObj,branchObj,scale,positionMatrix,owner) {
     SolidObject.call(this,null,null,0.7,scale,positionMatrix,owner);
     this.trunk = new TrunkObject(barkImg,trunkObj,15,0.3,[0.2,0,0],this);
     this.parts = [this.trunk];
-    
+    var numBranches = Math.random()*(10-5)+5;
+    //for (var i=0; i<numBranches; i++) {
+        this.parts.push(new TrunkObject(barkImg,branchObj,15,0.3[0,2,0]));
+    //}
 }
 TreeObject.prototype = Object.create(SolidObject.prototype);
 TreeObject.prototype.constructor = TreeObject;
@@ -478,6 +481,7 @@ function TrunkObject(barkImg,trunkObj,textureScale,scale,positionMatrix,owner) {
 }
 TrunkObject.prototype = Object.create(GenericObject.prototype);
 TrunkObject.prototype.constructor = TrunkObject;
+
 
 //////////////////////////////////
 function Ghost(gameState,moveSpeed,ghostImg,ghostObj,scale,positionMatrix,owner) {
@@ -588,7 +592,7 @@ Goal.prototype.activate = function() {
     this.gameStateRef.nextLevel();
 }
 Goal.prototype.animate = function(elapsed) {
-    console.log(this.gameStateRef.playerLocation().distance(this.position.posVec()))
+    //console.log(this.gameStateRef.playerLocation().distance(this.position.posVec()))
     var spinSpeed = 0.1+0.6*(8-Math.min(8,this.gameStateRef.playerLocation().distance(this.position.posVec())));
     this.rotation = this.rotation.rotateYAxis(spinSpeed*elapsed);
 }

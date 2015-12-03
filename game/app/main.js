@@ -54,8 +54,9 @@ var assets={
     wallObj : 'assests/unitwall.obj',
     barkImg : 'assests/bark_sqr.png',
     trunkObj : 'assests/trunk.obj',
-    graveImg : 'assests/natural-moss-stone.jpg',
-    graveOnImg : 'assests/natural-moss-stone-bright.jpg',
+    branchObj : 'assests/branch.obj',
+    graveImg : 'assests/grave.jpg',
+    graveOnImg : 'assests/grave-bright.jpg',
     graveObj : 'assests/grave.obj',
     ghostImg : 'assests/cloth_text.png',
     ghostObj : 'assests/wraith_text.obj',
@@ -119,16 +120,16 @@ gameState.addWall = function(name,rotation,scale,location) {
     this.solidObjects[name] = (new Wall(assets.wallImg,assets.wallObj,rotation,scale,location));              
 }
 
-gameState.addTree = function(name,scale,location) {
-    this.solidObjects[name] = (new TreeObject(assets.barkImg,assets.trunkObj,scale,location));              
+gameState.addTree = function(name,location) {
+    this.solidObjects[name] = (new TreeObject(assets.barkImg,assets.trunkObj,assets.branchObj,1.0,location));              
 }
 
-gameState.addGoal = function(name,scale,location) {
-    this.solidObjects[name] = (new Goal(this,assets.goalImg,assets.goalObj,assets.goalSound,scale,location));              
+gameState.addGoal = function(name,location) {
+    this.solidObjects[name] = (new Goal(this,assets.goalImg,assets.goalObj,assets.goalSound,0.6,location));              
 }
 
-gameState.addGrave = function(name,scale,location,inFront,trips) {
-    this.solidObjects[name] = (new Grave(gameState,inFront,assets.graveImg,assets.graveOnImg,assets.graveObj,assets.ghostImg,assets.ghostObj,assets.ghostSoundUp,assets.ghostSoundDown,scale,location));
+gameState.addGrave = function(name,location,inFront,trips) {
+    this.solidObjects[name] = (new Grave(gameState,inFront,assets.graveImg,assets.graveOnImg,assets.graveObj,assets.ghostImg,assets.ghostObj,assets.ghostSoundUp,assets.ghostSoundDown,0.4,location));
     var tripCount=0;
     for (trip of trips) {
         this.collidableObjects.push(new Trip(gameState.solidObjects[name],assets.tripImg,assets.tripObj,trip.scale,trip.loc)); 
@@ -157,13 +158,13 @@ gameState.loadLevel = function(loc) {
                 if (loaded[name].type=="Floor") 
                     myself.addFloor(name,loaded[name].scale,loaded[name].location);
                 else if (loaded[name].type=="Tree") 
-                    myself.addTree(name,loaded[name].scale,loaded[name].location);
+                    myself.addTree(name,loaded[name].location);
                 else if (loaded[name].type=="Goal") 
-                    myself.addGoal(name,loaded[name].scale,loaded[name].location);
+                    myself.addGoal(name,loaded[name].location);
                 else if (loaded[name].type=="Wall") 
                     myself.addWall(name,loaded[name].rotationAngle,loaded[name].scale,loaded[name].location);
                 else if (loaded[name].type=="Grave") 
-                    myself.addGrave(name,loaded[name].scale,loaded[name].location,loaded[name].inFront,loaded[name].trips);
+                    myself.addGrave(name,loaded[name].location,loaded[name].inFront,loaded[name].trips);
                 else if (name==="StartingLocation") 
                     myself.startingLoc= new Vec(loaded[name]);
                 else if (name==="StartingLooking") 
