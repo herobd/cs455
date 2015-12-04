@@ -53,8 +53,12 @@ var assets={
     wallImg : 'assests/BrickOldOvergrown256.jpg',
     wallObj : 'assests/unitwall.obj',
     barkImg : 'assests/bark_sqr.png',
+    leafImg : 'assests/leaf.jpg',
     trunkObj : 'assests/trunk.obj',
     branchObj : 'assests/branch.obj',
+    branchLeafObj : 'assests/branch_leaves.obj',
+    smallBranchObj : 'assests/small_branch.obj',
+    treeTopperObj : 'assests/tree_topper.obj',
     graveImg : 'assests/grave.jpg',
     graveOnImg : 'assests/grave-bright.jpg',
     graveObj : 'assests/grave.obj',
@@ -121,7 +125,7 @@ gameState.addWall = function(name,rotation,scale,location) {
 }
 
 gameState.addTree = function(name,location) {
-    this.solidObjects[name] = (new TreeObject(assets.barkImg,assets.trunkObj,assets.branchObj,1.0,location));              
+    this.solidObjects[name] = (new TreeObject(assets.barkImg,assets.leafImg,assets.trunkObj,assets.branchObj,assets.branchLeafObj,assets.smallBranchObj,assets.treeTopperObj,1.0,location));              
 }
 
 gameState.addGoal = function(name,location) {
