@@ -467,7 +467,7 @@ function TreeObject(barkImg,trunkObj,branchObj,scale,positionMatrix,owner) {
     this.parts = [this.trunk];
     var numBranches = Math.random()*(10-5)+5;
     //for (var i=0; i<numBranches; i++) {
-        this.parts.push(new TrunkObject(barkImg,branchObj,15,0.3[0,2,0]));
+        this.parts.push(new TrunkObject(barkImg,branchObj,15,0.3,[0,0,0],this));
     //}
 }
 TreeObject.prototype = Object.create(SolidObject.prototype);

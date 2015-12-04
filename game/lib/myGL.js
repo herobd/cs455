@@ -15,7 +15,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
         colorTexture : null,
         depthTexture : null,
 
-        initGL : function (canvas) {
+        initGL : function (canvas,flatCanvas) {
             try {
                 this.gl=canvas.getContext("experimental-webgl");
                 var depthTextureExt = this.gl.getExtension("WEBKIT_WEBGL_depth_texture"); // Or browser-appropriate prefix
@@ -23,6 +23,8 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
                 //this.gl = WebGLDebugUtils.makeDebugContext(this.gl, undefined, validateNoneOfTheArgsAreUndefined);
                 this.viewportWidth = canvas.width;
                 this.viewportHeight = canvas.height;
+                
+                this.flat = flatCanvas.getContext("2d");
             }
             catch (e) {
             }
@@ -127,6 +129,44 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.shaderProgram.ambientColorUniform = this.gl.getUniformLocation(this.shaderProgram, "uAmbientColor");
             this.shaderProgram.lightingDirectionUniform = this.gl.getUniformLocation(this.shaderProgram, "uLightingDirection");
             this.shaderProgram.directionalColorUniform = this.gl.getUniformLocation(this.shaderProgram, "uDirectionalColor");
+            
+            //////////////////////////////
+            /*
+            var fragmentShaderFlat = this.getShader("shader-fs-flat");
+            var vertexShaderFlat = this.getShader("shader-vs-flat");
+            this.shaderProgramFlat = this.gl.createProgram();
+            this.gl.attachShader(this.shaderProgramFlat, vertexShaderFlat);
+            this.gl.attachShader(this.shaderProgramFlat, fragmentShaderFlat);
+            this.gl.linkProgram(this.shaderProgramFlat);
+            if (!this.gl.getProgramParameter(this.shaderProgramFlat, this.gl.LINK_STATUS)) {
+                alert("Could not initialise shadersFlat");
+            }
+
+            this.gl.useProgram(this.shaderProgramFlat);
+            this.shaderProgramFlat.vertexPositionAttribute = this.gl.getAttribLocation(this.shaderProgramFlat, "aVertexPosition");
+            this.gl.enableVertexAttribArray(this.shaderProgramFlat.vertexPositionAttribute);
+            
+            
+            this.shaderProgramFlat.textureCoordAttribute = this.gl.getAttribLocation(this.shaderProgramFlat, "aTextureCoord");
+            this.gl.enableVertexAttribArray(this.shaderProgramFlat.textureCoordAttribute);*/
+        },
+        
+        switchMainShader : function() {
+            if (this.shader!='main') {
+                this.gl.useProgram(this.shaderProgram);
+                this.gl.enableVertexAttribArray(this.shaderProgram.vertexPositionAttribute);
+                this.gl.enableVertexAttribArray(this.shaderProgram.vertexNormalAttribute);
+                this.gl.enableVertexAttribArray(this.shaderProgram.textureCoordAttribute);
+                this.currentShader='main';
+            }
+        },
+        switchFlatShader : function() {
+            if (this.shader!='flat') {
+                this.gl.useProgram(this.shaderProgramFlat);
+                this.gl.enableVertexAttribArray(this.shaderProgramFlat.vertexPositionAttribute);
+                this.gl.enableVertexAttribArray(this.shaderProgramFlat.textureCoordAttribute);
+                this.currentShader='flat';
+            }
         },
         
         //JS is single threaded, so I think this doesn't have a race condition
@@ -193,6 +233,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
         },
         
         drawTexturedObjectPart : function  (texturedObject,perspectiveMat) {
+            this.switchMainShader()
             //console.log(texturedObject);
             this.gl.bindBuffer(this.gl.ARRAY_BUFFER, texturedObject.obj.vertexPositionBuffer);
             this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, texturedObject.obj.vertexPositionBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
@@ -212,9 +253,38 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.gl.drawElements(this.gl.TRIANGLES, texturedObject.obj.vertexIndexBuffer.numItems, this.gl.UNSIGNED_SHORT, 0);
         },
         
+        drawFlatTexture : function  (texturedObject) {
+            this.switchFlatShader()
+            //console.log(texturedObject);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, texturedObject.obj.vertexPositionBuffer);
+            this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, texturedObject.obj.vertexPositionBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
+            
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, texturedObject.obj.vertexTextureCordBuffer);
+            this.gl.vertexAttribPointer(this.shaderProgram.textureCoordAttribute, texturedObject.obj.vertexTextureCordBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
+            
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, texturedObject.obj.vertexNormalBuffer);
+            this.gl.vertexAttribPointer(this.shaderProgram.vertexNormalAttribute, texturedObject.obj.vertexNormalBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
+            
+            this.gl.activeTexture(this.gl.TEXTURE0);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, texturedObject.texture.glTexture);
+            this.gl.uniform1i(this.shaderProgram.samplerUniform, 0);
+            
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, texturedObject.obj.vertexIndexBuffer);
+            
+            this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, texturedObject.getDrawMatrix().flat());
+            
+            this.gl.drawElements(this.gl.TRIANGLES, texturedObject.obj.vertexIndexBuffer.numItems, this.gl.UNSIGNED_SHORT, 0);
+        },
+        
+        drawUI : function(image,x,y,width,height) {
+            this.flat.drawImage(image,x,y,width,height);
+        },
+        
         clearScene : function () {
             this.gl.viewport(0, 0, this.viewportWidth, this.viewportHeight);
             this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+            
+            this.flat.clearRect(0, 0, this.viewportWidth, this.viewportHeight);
         },
         
         setLighting : function(ambientColor,lightingDir,lightingColor) {

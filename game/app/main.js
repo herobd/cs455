@@ -215,7 +215,9 @@ function drawTexturedObject(texturedObject,perspectiveMat) {
     
 }
 
-    
+function drawMap() {
+    myGL.drawUI(gameState.mapImageUI(),gameState.mapX,gameState.mapY,gameState.mapWidth,gameState.mapHeight);
+}
     
 
 var lastTime = 0;
@@ -259,8 +261,7 @@ var tick;
 function webGLStart() {
     
 
-    var canvas = document.getElementById("it-is-a-canvas");
-    myGL.initGL(canvas);
+    myGL.initGL(document.getElementById("it-is-a-canvas"),document.getElementById("flat"));
     //initBuffers();
     //initTexture();
     
@@ -491,7 +492,7 @@ function webGLStart() {
         gameState.sceneElements['axis2']=(axis2);
     });
     
-    
+    var testo = new GenericObject(assets.wallImg,assets.wallObj,1,[0,0,0.5]);
     
     tick = function() {
         requestAnimFrame(tick);
@@ -552,6 +553,9 @@ function webGLStart() {
             if (gameState.collidableObjects.hasOwnProperty(ele))
         	    drawTexturedObject(gameState.collidableObjects[ele],perspectiveMat);
         }
+        
+        //drawMap();
+        
         //globalDepth = myGL.getDepth();
     }
     tick();
