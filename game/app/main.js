@@ -234,6 +234,8 @@ function drawTexturedObject(texturedObject,perspectiveMat) {
 
 function drawMap() {
     var drawing=false;
+    var d;
+    var orth;
     for (ele in gameState.solidObjects) {
         if (gameState.solidObjects.hasOwnProperty(ele)) {
             var obj=gameState.solidObjects[ele];
@@ -243,23 +245,41 @@ function drawMap() {
                     if (!drawing) {
                         myGL.drawUI(gameState.mapImageUI,gameState.mapX,gameState.mapY,gameState.mapSize,gameState.mapSize);
                         drawing=true;
+                        d = gameState.camera.lookingFrom.minus(gameState.camera.lookingAt);
+                        d[1]=0;//ignore y
+                        orth = d.cross(gameState.camera.up);
+                        d = d.normalize();
+                        orth = orth.normalize();
+                        
                     }
                     var relPos = obj.position.posVec().minus(gameState.playerLocation());
                     var dist=relPos.mag();
                     relPos = relPos.normalize().scale((Math.min(14,dist)/15)*gameState.mapSize/2);
+                    var proX = relPos.dot(orth);
+                    var proY = relPos.dot(d);
+                    
                     myGL.drawUI(gameState.graveImageUI,
-                                gameState.mapX+relPos[0]+gameState.mapSize/2,
-                                gameState.mapY+relPos[2]+gameState.mapSize/2,
-                                gameState.mapSize/10,gameState.mapSize/10);
+                                gameState.mapX+proX+gameState.mapSize/2,
+                                gameState.mapY+proY+gameState.mapSize/2,
+                                gameState.mapSize/6,gameState.mapSize/6);
                 }
             }
         }
     }
     if (drawing) {
         
-        for (ele of gameState.collidableObjects) {
-            if (ele instanceof Ghost) {
+        for (obj of gameState.collidableObjects) {
+            if (obj instanceof Ghost) {
+                var relPos = obj.position.posVec().minus(gameState.playerLocation());
+                var dist=relPos.mag();
+                relPos = relPos.normalize().scale((Math.min(14,dist)/15)*gameState.mapSize/2);
+                var proX = relPos.dot(orth);
+                var proY = relPos.dot(d);
                 
+                myGL.drawUI(gameState.ghostImageUI,
+                            gameState.mapX+proX+gameState.mapSize/2,
+                            gameState.mapY+proY+gameState.mapSize/2,
+                            gameState.mapSize/6,gameState.mapSize/6);
             }
         }
     }
