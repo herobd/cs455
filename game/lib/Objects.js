@@ -44,7 +44,7 @@
         	 //no animation
     };
     
-    GenericObject.prototype.setUpOBJ = function (toFill, file, textureScaleX, textureScaleY) {
+    function setUpOBJ(toFill, file, textureScaleX, textureScaleY) {
         textureScaleX = typeof textureScaleX !== 'undefined' ? textureScaleX : 1;
         textureScaleY = typeof textureScaleY !== 'undefined' ? textureScaleY : textureScaleX;
 		
@@ -212,14 +212,7 @@
     
     var loadedTextures = {};
     var loadedOBJs = {};
-    GenericObject.prototype.initTexture = function (imgName) {
-        
-        if (imgName === null) {
-            this.texture = null;
-            return;
-        }
-        
-        //Get the texture
+    function loadTexture(imgName) {
         if (!loadedTextures.hasOwnProperty(imgName)) {
 	      loadedTextures[imgName] = {};
 	      loadedTextures[imgName].image = new Image();
@@ -230,6 +223,48 @@
 	      
 	      loadedTextures[imgName].image.src = imgName;
         }
+    }
+    function loadOBJ(objName,textureScaleX,textureScaleY) {
+        var path = window.location.pathname.substring(1);
+        textureScaleX = typeof textureScaleX !== 'undefined' ? textureScaleX : 1;
+        textureScaleY = typeof textureScaleX !== 'undefined' ? textureScaleY : textureScaleX;
+        var refOBJName = objName + textureScaleX+'_'+textureScaleY;
+        if (!loadedOBJs.hasOwnProperty(refOBJName)) {
+              loadedOBJs[refOBJName]={};
+              loadedOBJs[refOBJName].vertexPositionBuffer=null;
+              loadedOBJs[refOBJName].vertexTextureCordBuffer=null;
+              loadedOBJs[refOBJName].vertexIndexBuffer=null;
+        
+          
+	          var xhr = new XMLHttpRequest();
+	          xhr.open("GET", "/"+path+objName, true);
+	          xhr.onload = function (e) {
+	            if (xhr.readyState === 4) {
+	              if (xhr.status === 200) {
+	                //console.log(xhr.responseText);
+	                var objFile=xhr.responseText;
+	                setUpOBJ(loadedOBJs[refOBJName],objFile,textureScaleX,textureScaleY);
+	              } else {
+	                console.error(xhr.statusText);
+	              }
+	            }
+	          };
+	          xhr.onerror = function (e) {
+	            console.error(xhr.statusText);
+	          };
+	          xhr.send(null);
+        }
+    }
+    
+    GenericObject.prototype.initTexture = function (imgName) {
+        
+        if (imgName === null) {
+            this.texture = null;
+            return;
+        }
+        
+        //Get the texture
+        loadTexture(imgName);
      
         this.texture = loadedTextures[imgName];
 
@@ -241,36 +276,11 @@
             this.obj = null;
             return;
         }
-        var path = window.location.pathname.substring(1);
         textureScaleX = typeof textureScaleX !== 'undefined' ? textureScaleX : 1;
         textureScaleY = typeof textureScaleX !== 'undefined' ? textureScaleY : textureScaleX;
         var refOBJName = objName + textureScaleX+'_'+textureScaleY;
         //Get the OBJ file
-        if (!loadedOBJs.hasOwnProperty(refOBJName)) {
-              loadedOBJs[refOBJName]={};
-              loadedOBJs[refOBJName].vertexPositionBuffer=null;
-              loadedOBJs[refOBJName].vertexTextureCordBuffer=null;
-              loadedOBJs[refOBJName].vertexIndexBuffer=null;
-        
-          var myself = this;
-	      var xhr = new XMLHttpRequest();
-	      xhr.open("GET", "/"+path+objName, true);
-	      xhr.onload = function (e) {
-	        if (xhr.readyState === 4) {
-	          if (xhr.status === 200) {
-	            //console.log(xhr.responseText);
-	            var objFile=xhr.responseText;
-	            myself.setUpOBJ(loadedOBJs[refOBJName],objFile,textureScaleX,textureScaleY);
-	          } else {
-	            console.error(xhr.statusText);
-	          }
-	        }
-	      };
-	      xhr.onerror = function (e) {
-	        console.error(xhr.statusText);
-	      };
-	      xhr.send(null);
-        }
+        loadOBJ(objName,textureScaleX,textureScaleY);
         this.obj=loadedOBJs[refOBJName]
               
     }
@@ -480,13 +490,16 @@ function shuffle(array) {
 }
 
  
-function TreeObject(barkImg,leafImg,trunkObj,branchObj,branchLeafObj,smallBranchObj,treeTopperObj,scale,positionMatrix,owner) {
-    SolidObject.call(this,null,null,0.7,scale,positionMatrix,owner);
+function TreeObject(density,barkImg,leafImg,trunkObj,branchObj,branchLeafObj,smallBranchObj,treeTopperObj,scale,positionMatrix,owner) {
+    SolidObject.call(this,null,null,0.2,scale,positionMatrix,owner);
     this.trunk = new TreePart(barkImg,trunkObj,15,0.3,[0,0,0],this);
     this.trunk.rotation = (new Mat4()).rotateYAxis(360*Math.random());
     this.parts = [this.trunk];
     this.parts.push(new TreePart(leafImg,treeTopperObj,5,0.3,[0,0,0],this));
-    var numBranches = Math.random()*(20-11)+11;
+    this.density=density;
+    var maxN=1.2/density;//2.0
+    var minN=0.7/density;//1.2
+    var numBranches = Math.random()*(maxN-minN)+minN;
     var spacingH =[];
     var spacingR =[];
     for (var p=0.0; p<1.0; p+=1.0/numBranches) {
@@ -500,8 +513,8 @@ function TreeObject(barkImg,leafImg,trunkObj,branchObj,branchLeafObj,smallBranch
 		if (height<0) {
 			this.parts.push(new TreePart(barkImg,branchObj,15,0.3,[0,height,0],this));
 			this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
-			this.parts.push(new TreePart(leafImg,branchLeafObj,5,0.3,[0,height,0],this));
-			this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
+			//this.parts.push(new TreePart(leafImg,branchLeafObj,5,0.3,[0,height,0],this));
+			//this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
 		}
 		else {
 			this.parts.push(new TreePart(leafImg,smallBranchObj,5,0.3,[0,height-0.5,0],this));
@@ -603,15 +616,28 @@ Grave.prototype.activate = function() {
         snd.play();
     }
 }
-Grave.prototype.setTripLoc = function(scale,loc) {
-    this.trips.push( {scale: scale, loc:loc} );
+Grave.prototype.setTripLoc = function(trip) {
+    this.trips.push( trip );
+}
+Grave.prototype.getTrips = function() {
+    var ret = [];
+    for (trip of this.trips) {
+        ret.push({sclae:trip.scale, loc:trip.position.posVec()});
+    }
 }
 
 ////////////////
 function Trip(grave,blankImg,circleObj,scale,positionMatrix,owner) {
-    SolidObject.call(this,blankImg,circleObj,1.0,scale,positionMatrix,owner);
+    //SolidObject.call(this,blankImg,circleObj,1.0,scale,positionMatrix,owner);
+    this.init(scale,positionMatrix,owner);
+    this.initTexture(blankImg);
+    //var tex_width = 
+    var setScale=1;
+    this.initOBJ(circleObj,scale/2,setScale/2);
+    this.boundingRadius = 1.0*scale;
+    this.plane=false;
     this.grave = grave;
-    grave.setTripLoc(scale,positionMatrix);
+    grave.setTripLoc(this);
 }
 Trip.prototype = Object.create(SolidObject.prototype);
 Trip.prototype.constructor = Trip;

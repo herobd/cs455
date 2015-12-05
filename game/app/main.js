@@ -27,6 +27,16 @@ var assets={
     mapGhost : 'assests/ghostIcon.png'
 }
 
+assets.preload = function() {
+    loadOBJ(this.floorObj); loadOBJ(this.wallObj);
+    loadOBJ(this.trunkObj); loadOBJ(this.branchObj);
+    loadOBJ(this.branchLeafObj); loadOBJ(this.smallBranchObj);
+    loadOBJ(this.treeTopperObj); loadOBJ(this.graveObj);
+    loadOBJ(this.ghostObj); loadOBJ(this.tripObj);
+    loadTexture(this.graveImg); loadTexture(this.ghostImg);
+    loadTexture(this.graveOnImg); loadTexture(this.goalImg);
+}
+
 //var logger=200;
 
 
@@ -58,7 +68,7 @@ gameState.invincible=true;
 gameState.sceneElements = {};
 gameState.solidObjects = {};
 gameState.collidableObjects = [];
-gameState.levels = ['test.level','test2.level'];
+gameState.levels = ['0.level','test.level','test2.level'];
 gameState.currentLevel = -1;
 gameState.currentLevelFile = 'none';
 
@@ -93,15 +103,17 @@ gameState.store = function(sceneElements,world) {
     for (ele in sceneElements) {
         if (sceneElements.hasOwnProperty(ele)) {
             
-            if (sceneElements[ele] instanceof Trip)
+            if (sceneElements[ele]==null || sceneElements[ele] instanceof Trip)
                 continue;
             world[ele] = {};
             world[ele].location = sceneElements[ele].position.posVec().flat();
             world[ele].scale = sceneElements[ele].scale;
             if (sceneElements[ele] instanceof FloorObject)
                 world[ele].type="Floor";
-            else if (sceneElements[ele] instanceof TreeObject)
+            else if (sceneElements[ele] instanceof TreeObject) {
                 world[ele].type="Tree";
+                world[ele].density = sceneElements[ele].density;
+            }
             else if (sceneElements[ele] instanceof Goal)
                 world[ele].type="Goal";
             else if (sceneElements[ele] instanceof Wall) {
@@ -110,7 +122,7 @@ gameState.store = function(sceneElements,world) {
             }
             else if (sceneElements[ele] instanceof Grave) {
                 world[ele].type="Grave";
-                world[ele].trips = sceneElements[ele].trips;
+                world[ele].trips = sceneElements[ele].getTrips();
                 world[ele].inFront = sceneElements[ele].inFront;
             }
             
@@ -129,6 +141,84 @@ gameState.saveLevel = function() {
     window.open('data:text/json;charset=utf-8,' + escape(JSON.stringify(json)));
 }
 
+gameState.randomTreeCount=0;
+gameState.makeTree = function(obj,spacing) {
+    var minX=obj.position.posVec()[0]+spacing/2.0;
+    var minY=obj.position.posVec()[2]+spacing/2.0;
+    var maxX = minX+obj.scale-spacing;
+    var maxY = minY+obj.scale-spacing;
+    if (spacing == undefined) spacing=1.4;
+    for(var i=0; i<100; i++) {
+        var x = Math.random()*(maxX-minX) + minX;
+        var y = Math.random()*(maxY-minY) + minY;
+        var goodPos=true;
+        for (ele in gameState.solidObjects) {
+            if (gameState.solidObjects.hasOwnProperty(ele)) {
+                var obj=gameState.solidObjects[ele];
+                if (obj!=null && Math.sqrt(Math.pow(x-obj.position.posVec()[0],2) + Math.pow(y-obj.position.posVec()[2],2))<spacing) {
+                    goodPos=false;
+                    break;
+                }
+            }
+        }
+        if (goodPos) {
+            this.addTree('genTree'+(gameState.randomTreeCount++),[x,0,y]);
+            return true;
+        }
+    }
+    return false;
+}
+
+gameState.makeTrees = function(density,spacing) {
+    if (spacing == undefined) spacing=1.4;
+    for (ele in gameState.sceneElements) {
+        if (gameState.sceneElements.hasOwnProperty(ele)) {
+            var obj=gameState.sceneElements[ele];
+            if (obj instanceof FloorObject)
+            {
+                var minX=obj.position.posVec()[0]+spacing/2.0;
+                var minY=obj.position.posVec()[2]+spacing/2.0;
+                var maxX = minX+obj.scale-spacing;
+                var maxY = minY+obj.scale-spacing;
+                var n = density*((maxX-minX)*(maxY-minY));
+                for (var i=0; i<n; i++) {
+                    this.makeTree(obj,spacing);
+                }
+            }
+        }
+    }
+}
+
+gameState.removeTrees = function() {
+    for (ele in gameState.solidObjects) {
+        if (gameState.solidObjects.hasOwnProperty(ele)) {
+            var obj=gameState.solidObjects[ele];
+            if (obj instanceof TreeObject) {
+                gameState.solidObjects[ele]=null;
+            }
+        }
+    }
+}
+
+gameState.removeNearestTree = function() {
+    var minDist=99999999;
+    var minEle='';
+    for (ele in gameState.solidObjects) {
+        if (gameState.solidObjects.hasOwnProperty(ele)) {
+            var obj=gameState.solidObjects[ele];
+            if (obj instanceof TreeObject) {
+                var dist = Math.sqrt(Math.pow(gameState.playerLocation()[0]-obj.position.posVec()[0],2) + Math.pow(gameState.playerLocation()[2]-obj.position.posVec()[2],2));
+                if (dist<minDist) {
+                    minDist=dist;
+                    minEle=ele;
+                }
+            }
+        }
+    }
+    gameState.solidObjects[minEle]=null;
+}
+
+
 //These act as handles for level building
 gameState.addFloor = function(name,scale,location) {
     this.sceneElements[name] = (new FloorObject(assets.floorImg,assets.floorObj,scale,location));              
@@ -137,8 +227,9 @@ gameState.addWall = function(name,rotation,scale,location) {
     this.solidObjects[name] = (new Wall(assets.wallImg,assets.wallObj,rotation,scale,location));              
 }
 
-gameState.addTree = function(name,location) {
-    this.solidObjects[name] = (new TreeObject(assets.barkImg,assets.leafImg,assets.trunkObj,assets.branchObj,assets.branchLeafObj,assets.smallBranchObj,assets.treeTopperObj,1.0,location));              
+gameState.addTree = function(name,location,density) {
+    if (density === undefined) density=0.3;
+    this.solidObjects[name] = (new TreeObject(density,assets.barkImg,assets.leafImg,assets.trunkObj,assets.branchObj,assets.branchLeafObj,assets.smallBranchObj,assets.treeTopperObj,1.0,location));              
 }
 
 gameState.addGoal = function(name,location) {
@@ -175,7 +266,7 @@ gameState.loadLevel = function(loc) {
                 if (loaded[name].type=="Floor") 
                     myself.addFloor(name,loaded[name].scale,loaded[name].location);
                 else if (loaded[name].type=="Tree") 
-                    myself.addTree(name,loaded[name].location);
+                    myself.addTree(name,loaded[name].location,loaded[name].density);
                 else if (loaded[name].type=="Goal") 
                     myself.addGoal(name,loaded[name].location);
                 else if (loaded[name].type=="Wall") 
@@ -219,6 +310,7 @@ gameState.nextLevel = function() {
 //New
 function drawTexturedObject(texturedObject,perspectiveMat) {
     //check if it's loaded
+    if (texturedObject==null) return;
     for (var part of texturedObject.getParts()) {
         drawTexturedObject(part,perspectiveMat);
     }
@@ -228,7 +320,10 @@ function drawTexturedObject(texturedObject,perspectiveMat) {
         texturedObject.obj.vertexIndexBuffer === null)
         return;
     
-    myGL.drawTexturedObjectPart(texturedObject,perspectiveMat);
+    if (texturedObject instanceof Trip && gameState.invincible)
+        myGL.drawTexturedObjectPart(texturedObject,perspectiveMat.translate([0,-0.1*texturedObject.scale,0]));
+    else
+        myGL.drawTexturedObjectPart(texturedObject,perspectiveMat);
     
 }
 
@@ -296,7 +391,7 @@ function animate() {
             if (gameState.sceneElements.hasOwnProperty(ele))
                 gameState.sceneElements[ele].animate(elapsed);
         for (ele in gameState.solidObjects) 
-            if (gameState.solidObjects.hasOwnProperty(ele))
+            if (gameState.solidObjects.hasOwnProperty(ele) && gameState.solidObjects[ele]!=null)
                 gameState.solidObjects[ele].animate(elapsed);
         for (ele in gameState.collidableObjects) 
             if (gameState.collidableObjects.hasOwnProperty(ele))
@@ -325,64 +420,10 @@ function TexturedObject(imgName, objName, location, scale) {
 
 var tick;
 function webGLStart() {
-    
+    assets.preload();
 
     myGL.initGL(document.getElementById("it-is-a-canvas"),document.getElementById("flat"));
-    //initBuffers();
-    //initTexture();
-    
-    
-    
     gameState.nextLevel();
-    
-    
-    
-    
-    
-    /*var ground = new FloorObject('assests/forest-floor-terrain_0040_03_S_enl.jpg','assests/unitfloor.obj',10,[0,0,0]);
-    var ground2 = new FloorObject('assests/forest-floor-terrain_0040_03_S_enl.jpg','assests/unitfloor.obj',2,[0,0,-3]);
-    gameState.sceneElements['ground']=(ground);
-    gameState.sceneElements['groun2']=(ground2);
-    
-    
-    
-    
-    //var chase= new Ghost(gameState,0.01,'assests/cloth_text.png', path +'assests/wraith_text.obj',.15,[-4.5, 0.5, -8.5]);
-    //gameState.solidObjects.push(chase);
-    
-    var grave= new Grave(gameState,true,'assests/violetCrayon.png', 'assests/violet_crayon.obj','assests/cloth_text.png', 'assests/wraith_text.obj',.15,[-4.5, 0.0, -8.5]);
-    gameState.solidObjects['grave1']=(grave);
-    var trip = new Trip(grave,'assests/violetCrayon.png','assests/circle.obj',2,[3.5, 0.0, -5.5]);
-    gameState.collidableObjects.push(trip);
-    
-    var grave2= new Grave(gameState,false,'assests/violetCrayon.png', 'assests/violet_crayon.obj','assests/cloth_text.png', 'assests/wraith_text.obj',.15,[3.5, 0.0, 5.5]);
-    gameState.solidObjects['grave2']=(grave2);
-    
-    var axis1 = new GenericObject('assests/violetCrayon.png', 'assests/violet_crayon.obj',0.2,[0,0,0]);
-    axis1.rotation = axis1.rotation.rotateZAxis(90);
-    var axis2 = new GenericObject('assests/violetCrayon.png', 'assests/violet_crayon.obj',0.1,[0,0,0]);
-    axis2.rotation = axis2.rotation.rotateXAxis(90);
-    gameState.sceneElements['axis1']=(axis1);
-    gameState.sceneElements['axis2']=(axis2);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    var tree= new TreeObject('assests/bark_sqr.png', 'assests/trunk.obj',1,[-4.58, 0, -1.66]);
-    var tree2= new TreeObject('assests/bark_sqr.png', 'assests/trunk.obj',1,[-4.00, 0, -1.66]);
-    var tree3= new TreeObject('assests/bark_sqr.png', 'assests/trunk.obj',1,[-4.00, 0, -5.66]);
-    gameState.solidObjects['tree1']=(tree);
-    gameState.solidObjects['tree2']=(tree2);
-    gameState.solidObjects['tree3']=(tree3);*/
-    
-    
-    
     
     function movement(elapsed,stick1x,stick1y,stick2x,stick2y) {
         var d = gameState.camera.lookingFrom.minus(gameState.camera.lookingAt);
@@ -400,7 +441,7 @@ function webGLStart() {
 
         for (var ele in gameState.solidObjects)
         {
-            if (gameState.solidObjects.hasOwnProperty(ele)) {
+            if (gameState.solidObjects.hasOwnProperty(ele) && gameState.solidObjects[ele]!=null) {
                 var vec = gameState.camera.collisionCheck(gameState.solidObjects[ele],moveVec);
                 if (vec != null) {
                     moveVec = (vec.cross(gameState.camera.up)).scale(moveVec.dot(vec.cross(gameState.camera.up)));
@@ -493,11 +534,10 @@ function webGLStart() {
     }
     
     /////debug
-    controller.keyboard[55].push( function(elapsed,pressed) {//7
-        if (pressed) {grave.seen();}
+    controller.keyboardUp[55].push( function(elapsed,pressed) {//7
+        gameState.removeNearestTree();
     });
     controller.keyboard[56].push( function(elapsed,pressed) {//8
-        if (pressed) {grave2.seen();}
     });
     controller.keyboardUp[57].push( function(elapsed) {//9
             myGL.getDepthPre();
