@@ -1,4 +1,31 @@
-
+var assets={
+    floorImg : 'assests/forest-floor-terrain_0040_03_S_enl.jpg',
+    floorObj : 'assests/unitfloor.obj',
+    wallImg : 'assests/BrickOldOvergrown256.jpg',
+    wallObj : 'assests/unitwall.obj',
+    barkImg : 'assests/bark_sqr.png',
+    leafImg : 'assests/leaf.jpg',
+    trunkObj : 'assests/trunk.obj',
+    branchObj : 'assests/branch.obj',
+    branchLeafObj : 'assests/branch_leaves.obj',
+    smallBranchObj : 'assests/small_branch.obj',
+    treeTopperObj : 'assests/tree_topper.obj',
+    graveImg : 'assests/grave.jpg',
+    graveOnImg : 'assests/grave-bright.jpg',
+    graveObj : 'assests/grave.obj',
+    ghostImg : 'assests/cloth_text.png',
+    ghostObj : 'assests/wraith_text.obj',
+    ghostSoundUp : 'assests/Monster Growl-SoundBible.com-344645592.mp3',
+    ghostSoundDown : 'assests/Zombie Moan-SoundBible.com-565291980.wav',
+    tripImg : 'assests/violetCrayon.png',
+    tripObj : 'assests/circle.obj',
+    goalImg : 'assests/marble_texture.jpg',
+    goalObj : 'assests/goal.obj',
+    goalSound : 'assests/Japanese Temple Bell Small-SoundBible.com-113624364.mp3',
+    mapBg : 'assests/map.png',
+    mapGrave : 'assests/graveIcon.png',
+    mapGhost : 'assests/ghostIcon.png'
+}
 
 //var logger=200;
 
@@ -27,6 +54,7 @@ gameState.dying = -1;
 gameState.dying_time = 50.0;
 gameState.changingLevel = -1;
 gameState.changingLevel_time = 50.0;
+gameState.invincible=true;
 gameState.sceneElements = {};
 gameState.solidObjects = {};
 gameState.collidableObjects = [];
@@ -46,32 +74,17 @@ gameState.camera.rotSpeed= degToRad(0.7);
 
 gameState.playerLocation = function() {return this.camera.lookingFrom;};
 
+gameState.mapX=2;
+gameState.mapY=2;
+gameState.mapSize=80;
+gameState.mapImageUI=new Image();
+gameState.mapImageUI.src = assets.mapBg;
+gameState.graveImageUI=new Image();
+gameState.graveImageUI.src = assets.mapGrave;
+gameState.ghostImageUI=new Image();
+gameState.ghostImageUI.src = assets.mapGhost;
 
-var assets={
-    floorImg : 'assests/forest-floor-terrain_0040_03_S_enl.jpg',
-    floorObj : 'assests/unitfloor.obj',
-    wallImg : 'assests/BrickOldOvergrown256.jpg',
-    wallObj : 'assests/unitwall.obj',
-    barkImg : 'assests/bark_sqr.png',
-    leafImg : 'assests/leaf.jpg',
-    trunkObj : 'assests/trunk.obj',
-    branchObj : 'assests/branch.obj',
-    branchLeafObj : 'assests/branch_leaves.obj',
-    smallBranchObj : 'assests/small_branch.obj',
-    treeTopperObj : 'assests/tree_topper.obj',
-    graveImg : 'assests/grave.jpg',
-    graveOnImg : 'assests/grave-bright.jpg',
-    graveObj : 'assests/grave.obj',
-    ghostImg : 'assests/cloth_text.png',
-    ghostObj : 'assests/wraith_text.obj',
-    ghostSoundUp : 'assests/Monster Growl-SoundBible.com-344645592.mp3',
-    ghostSoundDown : 'assests/Zombie Moan-SoundBible.com-565291980.wav',
-    tripImg : 'assests/violetCrayon.png',
-    tripObj : 'assests/circle.obj',
-    goalImg : 'assests/marble_texture.jpg',
-    goalObj : 'assests/goal.obj',
-    goalSound : 'assests/Japanese Temple Bell Small-SoundBible.com-113624364.mp3'
-}
+
     
 
 gameState.store = function(sceneElements,world) {
@@ -220,7 +233,36 @@ function drawTexturedObject(texturedObject,perspectiveMat) {
 }
 
 function drawMap() {
-    myGL.drawUI(gameState.mapImageUI(),gameState.mapX,gameState.mapY,gameState.mapWidth,gameState.mapHeight);
+    var drawing=false;
+    for (ele in gameState.solidObjects) {
+        if (gameState.solidObjects.hasOwnProperty(ele)) {
+            var obj=gameState.solidObjects[ele];
+            if (obj instanceof Grave)
+            {
+                if (obj.state==1) {
+                    if (!drawing) {
+                        myGL.drawUI(gameState.mapImageUI,gameState.mapX,gameState.mapY,gameState.mapSize,gameState.mapSize);
+                        drawing=true;
+                    }
+                    var relPos = obj.position.posVec().minus(gameState.playerLocation());
+                    var dist=relPos.mag();
+                    relPos = relPos.normalize().scale((Math.min(14,dist)/15)*gameState.mapSize/2);
+                    myGL.drawUI(gameState.graveImageUI,
+                                gameState.mapX+relPos[0]+gameState.mapSize/2,
+                                gameState.mapY+relPos[2]+gameState.mapSize/2,
+                                gameState.mapSize/10,gameState.mapSize/10);
+                }
+            }
+        }
+    }
+    if (drawing) {
+        
+        for (ele of gameState.collidableObjects) {
+            if (ele instanceof Ghost) {
+                
+            }
+        }
+    }
 }
     
 
@@ -503,6 +545,8 @@ function webGLStart() {
         //console.log('dying: '+gameState.dying)
         //console.log('changingLevel: '+gameState.changingLevel)
         
+        if (gameState.invincible) gameState.dying=-1;
+        
         if (this.changingLevel==-2) {
             myGL.setLighting([0.5*3,0.5*3,0.5*3], 
                              [0.3,1,0], 
@@ -558,7 +602,7 @@ function webGLStart() {
         	    drawTexturedObject(gameState.collidableObjects[ele],perspectiveMat);
         }
         
-        //drawMap();
+        drawMap();
         
         //globalDepth = myGL.getDepth();
     }

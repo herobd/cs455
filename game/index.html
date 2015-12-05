@@ -70,11 +70,20 @@
 </script>
 
 <style>
+.view {
+    position: relative;
+}
 #flat {
     position: absolute;
     left: 0px;
     top: 0px;
     z-index: 10;
+}
+#it-is-a-canvas {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 0;
 }
 </style>
 
@@ -82,8 +91,6 @@
 
 
 <body>
-    <h>Brian's CS455 game</h>
-    <br/>
 
     <div id='view'>
         <canvas id="it-is-a-canvas" style="border: none;" width="500" height="500">

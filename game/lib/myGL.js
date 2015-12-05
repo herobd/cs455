@@ -278,6 +278,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
         
         drawUI : function(image,x,y,width,height) {
             this.flat.drawImage(image,x,y,width,height);
+            this.flat.fillText('Hello World!!!!!!!!!!', 200, 200);
         },
         
         clearScene : function () {

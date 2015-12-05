@@ -482,10 +482,11 @@ function shuffle(array) {
  
 function TreeObject(barkImg,leafImg,trunkObj,branchObj,branchLeafObj,smallBranchObj,treeTopperObj,scale,positionMatrix,owner) {
     SolidObject.call(this,null,null,0.7,scale,positionMatrix,owner);
-    this.trunk = new TreePart(barkImg,trunkObj,15,0.3,[0.2,0,0],this);
+    this.trunk = new TreePart(barkImg,trunkObj,15,0.3,[0,0,0],this);
+    this.trunk.rotation = (new Mat4()).rotateYAxis(360*Math.random());
     this.parts = [this.trunk];
     this.parts.push(new TreePart(leafImg,treeTopperObj,5,0.3,[0,0,0],this));
-    var numBranches = Math.random()*(10-5)+5;
+    var numBranches = Math.random()*(20-11)+11;
     var spacingH =[];
     var spacingR =[];
     for (var p=0.0; p<1.0; p+=1.0/numBranches) {
@@ -495,16 +496,16 @@ function TreeObject(barkImg,leafImg,trunkObj,branchObj,branchLeafObj,smallBranch
 	spacingR = shuffle(spacingR);
 	
     for (var i=0; i<numBranches; i++) {
-		var height = spacingH[i]*4 -1.8;
+		var height = spacingH[i]*4.5 -2
 		if (height<0) {
 			this.parts.push(new TreePart(barkImg,branchObj,15,0.3,[0,height,0],this));
-			this.parts[this.parts.length-1].rotation = (new Mat4).rotateYAxis(360*spacingR);
+			this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
 			this.parts.push(new TreePart(leafImg,branchLeafObj,5,0.3,[0,height,0],this));
-			this.parts[this.parts.length-1].rotation = (new Mat4).rotateYAxis(360*spacingR);
+			this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
 		}
 		else {
-			this.parts.push(new TreePart(leafImg,smallBranchObj,5,0.3,[0,height,0],this));
-			this.parts[this.parts.length-1].rotation = (new Mat4).rotateYAxis(360*spacingR);
+			this.parts.push(new TreePart(leafImg,smallBranchObj,5,0.3,[0,height-0.5,0],this));
+			this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
 		}
         
     }
