@@ -222,7 +222,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             //this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, (moveMat.translate([0.0,-1,0.0])).flat());
             
             var pMatrix = mat4.create();
-            mat4.perspective(45, this.viewportWidth / this.viewportHeight, 0.1, 100.0, pMatrix);
+            mat4.perspective(45, this.viewportWidth / this.viewportHeight, 0.1, 20.0, pMatrix);
             this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform, false, pMatrix);
             
             //??

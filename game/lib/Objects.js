@@ -513,8 +513,8 @@ function TreeObject(density,barkImg,leafImg,trunkObj,branchObj,branchLeafObj,sma
 		if (height<0) {
 			this.parts.push(new TreePart(barkImg,branchObj,15,0.3,[0,height,0],this));
 			this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
-			//this.parts.push(new TreePart(leafImg,branchLeafObj,5,0.3,[0,height,0],this));
-			//this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
+			this.parts.push(new TreePart(leafImg,branchLeafObj,5,0.3,[0,height,0],this));
+			this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
 		}
 		else {
 			this.parts.push(new TreePart(leafImg,smallBranchObj,5,0.3,[0,height-0.5,0],this));

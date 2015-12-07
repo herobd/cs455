@@ -6,8 +6,8 @@ var assets={
     barkImg : 'assests/bark_sqr.png',
     leafImg : 'assests/leaf.jpg',
     trunkObj : 'assests/trunk.obj',
-    branchObj : 'assests/branch.obj',
-    branchLeafObj : 'assests/branch_leaves.obj',
+    branchObj : 'assests/branchSimple.obj',
+    branchLeafObj : 'assests/branch_leavesSimple.obj',
     smallBranchObj : 'assests/small_branch.obj',
     treeTopperObj : 'assests/tree_topper.obj',
     graveImg : 'assests/grave.jpg',
@@ -24,7 +24,8 @@ var assets={
     goalSound : 'assests/Japanese Temple Bell Small-SoundBible.com-113624364.mp3',
     mapBg : 'assests/map.png',
     mapGrave : 'assests/graveIcon.png',
-    mapGhost : 'assests/ghostIcon.png'
+    mapGhost : 'assests/ghostIcon.png',
+    levels : ['0.level','test.level','test2.level']
 }
 
 assets.preload = function() {
@@ -68,7 +69,7 @@ gameState.invincible=true;
 gameState.sceneElements = {};
 gameState.solidObjects = {};
 gameState.collidableObjects = [];
-gameState.levels = ['0.level','test.level','test2.level'];
+gameState.levels = assets.levels;
 gameState.currentLevel = -1;
 gameState.currentLevelFile = 'none';
 
