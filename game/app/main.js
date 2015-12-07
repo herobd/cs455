@@ -321,6 +321,10 @@ function drawTexturedObject(texturedObject,perspectiveMat) {
         texturedObject.obj.vertexIndexBuffer === null)
         return;
     
+    if (texturedObject.texture.glTexture === undefined) {
+        console.log('undef')
+    }
+    
     if (texturedObject instanceof Trip && gameState.invincible)
         myGL.drawTexturedObjectPart(texturedObject,perspectiveMat.translate([0,-0.1*texturedObject.scale,0]));
     else
@@ -379,6 +383,7 @@ function drawMap() {
             }
         }
     }
+    myGL.drawText("hello world");
 }
     
 

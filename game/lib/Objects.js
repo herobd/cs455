@@ -28,14 +28,25 @@
         
         this.rotation = new Mat4();
         this.parts = [];
+        this.drawMatrix=null;
     };
     GenericObject.prototype.getDrawMatrix = function() {
-        	 
-        	 return this.owner.getDrawMatrix().multiply(this.position).multiply(this.rotation).multiply(this.scaleM);
+        if (this.drawMatrix===null){
+        	 this.drawMatrix = this.owner.getDrawMatrix().multiply(this.position).multiply(this.rotation).multiply(this.scaleM);
+    	}
+        return this.drawMatrix;
     };
     GenericObject.prototype.move = function(vec) {
         	 this.position = this.position.translate(vec);
-        	 //this.location = vec;
+        	 this.drawMatrix=null;
+    };
+    GenericObject.prototype.setRotation = function(mat) {
+        	 this.rotation = mat;
+        	 this.drawMatrix=null;
+    };
+    GenericObject.prototype.setPosition = function(mat) {
+        	 this.position = mat;
+        	 this.drawMatrix=null;
     };
     GenericObject.prototype.getParts = function() {
         	 return this.parts;

@@ -18,8 +18,8 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
         initGL : function (canvas,flatCanvas) {
             try {
                 this.gl=canvas.getContext("experimental-webgl");
-                var depthTextureExt = this.gl.getExtension("WEBKIT_WEBGL_depth_texture"); // Or browser-appropriate prefix
-                if(!depthTextureExt) { console.log('ERROR, no depth textures');}
+                //var depthTextureExt = this.gl.getExtension("WEBKIT_WEBGL_depth_texture"); // Or browser-appropriate prefix
+                //if(!depthTextureExt) { console.log('ERROR, no depth textures');}
                 //this.gl = WebGLDebugUtils.makeDebugContext(this.gl, undefined, validateNoneOfTheArgsAreUndefined);
                 this.viewportWidth = canvas.width;
                 this.viewportHeight = canvas.height;
@@ -39,7 +39,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
                 this.gl.enable(this.gl.DEPTH_TEST);
                 this.gl.depthFunc(this.gl.LEQUAL);
                 
-                this.framebuffer = this.gl.createFramebuffer();
+                /*this.framebuffer = this.gl.createFramebuffer();
                 this.colorTexture = this.gl.createTexture();
                 this.depthTexture = this.gl.createTexture();
                 // Create a color texture
@@ -61,6 +61,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
                 this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE);
                 this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.DEPTH_COMPONENT, this.gl.DEPTH_COMPONENT, this.gl.UNSIGNED_SHORT, null);
                 //this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.DEPTH_COMPONENT, 0, 0, this.viewportWidth, this.viewportHeight, 0, this.gl.DEPTH_COMPONENT, this.gl.UNSIGNED_SHORT, null);
+                */
             }
 
         },
@@ -280,6 +281,9 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.flat.drawImage(image,x,y,width,height);
             this.flat.fillText('Hello World!!!!!!!!!!', 200, 200);
         },
+        drawText : function(text) {
+            this.flat.fillText(text, 200, 200);
+        },
         
         clearScene : function () {
             this.gl.viewport(0, 0, this.viewportWidth, this.viewportHeight);
@@ -305,7 +309,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
         },
         
         getDepthPre : function (points) {
-
+            console.log('getDepthPre() not implemented')
             
 
             

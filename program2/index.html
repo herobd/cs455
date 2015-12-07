@@ -431,9 +431,11 @@
         
         var texturedCrayon= new TexturedObject('violetCrayon.png','violet_crayon.obj',[0.0, 5.0, -30.0],0.45);
         var texturedBox= new TexturedObject('CrayonBox2.png','color_box.obj',[0.0, -5.0, -30.0],1);
+        var texturedBox2= new TexturedObject('CrayonBox2.png','color_box.obj',[0.0, 0.0, -10.0],1);
         
         sceneElements.push(texturedCrayon);
         sceneElements.push(texturedBox);
+        sceneElements.push(texturedBox2);
         
         gl.clearColor(0.2, 0.2, 0.2, 1.0);
         gl.enable(gl.DEPTH_TEST);
