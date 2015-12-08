@@ -39,6 +39,10 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
                 this.gl.enable(this.gl.DEPTH_TEST);
                 this.gl.depthFunc(this.gl.LEQUAL);
                 
+                var pMatrix = mat4.create();
+                mat4.perspective(45, this.viewportWidth / this.viewportHeight, 0.1, 30.0, pMatrix);
+                this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform, false, pMatrix);
+                
                 /*this.framebuffer = this.gl.createFramebuffer();
                 this.colorTexture = this.gl.createTexture();
                 this.depthTexture = this.gl.createTexture();
@@ -222,9 +226,7 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, perspectiveMat.multiply(moveMat).flat());
             //this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, (moveMat.translate([0.0,-1,0.0])).flat());
             
-            var pMatrix = mat4.create();
-            mat4.perspective(45, this.viewportWidth / this.viewportHeight, 0.1, 20.0, pMatrix);
-            this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform, false, pMatrix);
+            
             
             //??
             var nmMatrixFlat = moveMat.toInverseMat3x3_flat();
@@ -252,6 +254,38 @@ function validateNoneOfTheArgsAreUndefined(functionName, args) {
             this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, texturedObject.obj.vertexIndexBuffer);
             this.setMatrixUniforms(perspectiveMat,texturedObject.getDrawMatrix());
             this.gl.drawElements(this.gl.TRIANGLES, texturedObject.obj.vertexIndexBuffer.numItems, this.gl.UNSIGNED_SHORT, 0);
+        },
+        
+        drawTexturedObjects : function  (texturedObjects,perspectiveMat) {
+            this.switchMainShader();
+            //var pMatrix = mat4.create();
+            //mat4.perspective(45, this.viewportWidth / this.viewportHeight, 0.1, 20.0, pMatrix);
+            //this.gl.uniformMatrix4fv(this.shaderProgram.pMatrixUniform, false, pMatrix);
+            
+            
+            
+            
+            //console.log(texturedObject);
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, texturedObjects[0].obj.vertexPositionBuffer);
+            this.gl.vertexAttribPointer(this.shaderProgram.vertexPositionAttribute, texturedObjects[0].obj.vertexPositionBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
+            
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, texturedObjects[0].obj.vertexTextureCordBuffer);
+            this.gl.vertexAttribPointer(this.shaderProgram.textureCoordAttribute, texturedObjects[0].obj.vertexTextureCordBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
+            
+            this.gl.bindBuffer(this.gl.ARRAY_BUFFER, texturedObjects[0].obj.vertexNormalBuffer);
+            this.gl.vertexAttribPointer(this.shaderProgram.vertexNormalAttribute, texturedObjects[0].obj.vertexNormalBuffer.itemSize, this.gl.FLOAT, false, 0, 0);
+            
+            this.gl.activeTexture(this.gl.TEXTURE0);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, texturedObjects[0].texture.glTexture);
+            this.gl.uniform1i(this.shaderProgram.samplerUniform, 0);
+            
+            this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, texturedObjects[0].obj.vertexIndexBuffer);
+            for (texturedObject of texturedObjects) {
+                var nmMatrixFlat = texturedObject.getDrawMatrix().toInverseMat3x3_flat();
+                this.gl.uniformMatrix3fv(this.shaderProgram.nMatrixUniform, false, nmMatrixFlat)
+                this.gl.uniformMatrix4fv(this.shaderProgram.mvMatrixUniform, false, perspectiveMat.multiply(texturedObject.getDrawMatrix()).flat());
+                this.gl.drawElements(this.gl.TRIANGLES, texturedObjects[0].obj.vertexIndexBuffer.numItems, this.gl.UNSIGNED_SHORT, 0);
+            }
         },
         
         drawFlatTexture : function  (texturedObject) {

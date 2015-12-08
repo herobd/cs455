@@ -508,10 +508,10 @@ function shuffle(array) {
  
 function TreeObject(density,barkImg,leafImg,trunkObj,branchObj,branchLeafObj,smallBranchObj,treeTopperObj,scale,positionMatrix,owner) {
     SolidObject.call(this,null,null,0.2,scale,positionMatrix,owner);
-    this.trunk = new TreePart(barkImg,trunkObj,15,0.3,[0,0,0],this);
+    this.trunk = new TreePart('trunk',barkImg,trunkObj,15,0.3,[0,0,0],this);
     this.trunk.rotation = (new Mat4()).rotateYAxis(360*Math.random());
     this.parts = [this.trunk];
-    this.parts.push(new TreePart(leafImg,treeTopperObj,5,0.3,[0,0,0],this));
+    this.parts.push(new TreePart('top',leafImg,treeTopperObj,5,0.3,[0,0,0],this));
     this.density=density;
     var maxN=1.2/density;//2.0
     var minN=0.7/density;//1.2
@@ -527,13 +527,13 @@ function TreeObject(density,barkImg,leafImg,trunkObj,branchObj,branchLeafObj,sma
     for (var i=0; i<numBranches; i++) {
 		var height = spacingH[i]*4.5 -2
 		if (height<0) {
-			this.parts.push(new TreePart(barkImg,branchObj,15,0.3,[0,height,0],this));
+			this.parts.push(new TreePart('branch',barkImg,branchObj,15,0.3,[0,height,0],this));
 			this.parts[this.parts.length-1].setRotation((new Mat4()).rotateYAxis(360*spacingR[i]));
-			this.parts.push(new TreePart(leafImg,branchLeafObj,5,0.3,[0,height,0],this));
+			this.parts.push(new TreePart('leaf',leafImg,branchLeafObj,5,0.3,[0,height,0],this));
 			this.parts[this.parts.length-1].setRotation( (new Mat4()).rotateYAxis(360*spacingR[i]));
 		}
 		else {
-			this.parts.push(new TreePart(leafImg,smallBranchObj,5,0.3,[0,height-0.5,0],this));
+			this.parts.push(new TreePart('small',leafImg,smallBranchObj,5,0.3,[0,height-0.5,0],this));
 			this.parts[this.parts.length-1].setRotation( (new Mat4()).rotateYAxis(360*spacingR[i]));
 		}
         
@@ -543,10 +543,11 @@ TreeObject.prototype = Object.create(SolidObject.prototype);
 TreeObject.prototype.constructor = TreeObject;
 
 
-function TreePart(barkImg,trunkObj,textureScale,scale,positionMatrix,owner) {
+function TreePart(type,barkImg,trunkObj,textureScale,scale,positionMatrix,owner) {
     this.init(scale,positionMatrix,owner);
     this.initTexture(barkImg);
     this.initOBJ(trunkObj,textureScale);
+    this.type=type;
 }
 TreePart.prototype = Object.create(GenericObject.prototype);
 TreePart.prototype.constructor = TreePart;

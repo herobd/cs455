@@ -26,7 +26,7 @@ var assets={
     mapBlank : 'assests/mapBlank.png',
     mapGrave : 'assests/graveIcon.png',
     mapGhost : 'assests/ghostIcon.png',
-    levels : ['2.level','0.level','1.level','2.level','3.level','rand.level']
+    levels : ['0.level','1.level','2.level','rand.level']
 }
 
 assets.preload = function() {
@@ -104,7 +104,7 @@ gameState.ghostImageUI.src = assets.mapGhost;
 gameState.store = function(sceneElements,world) {
     world['StartingLocation']=this.startingLoc.flat();
     world['StartingLooking']=this.startingLook.flat();
-    for (ele in sceneElements) {
+    for (var ele in sceneElements) {
         if (sceneElements.hasOwnProperty(ele)) {
             
             if (sceneElements[ele]==null || sceneElements[ele] instanceof Trip)
@@ -147,7 +147,7 @@ gameState.saveLevel = function() {
 
 gameState.makeGoal = function(spacing) {
 	if (spacing == undefined) spacing=1.4;
-    for (ele in gameState.sceneElements) {
+    for (var ele in gameState.sceneElements) {
         if (gameState.sceneElements.hasOwnProperty(ele)) {
             var obj=gameState.sceneElements[ele];
             if (obj instanceof FloorObject)
@@ -162,7 +162,7 @@ gameState.makeGoal = function(spacing) {
 					var x = Math.random()*(maxX-minX) + minX;
 					var y = Math.random()*(maxY-minY) + minY;
 					var goodPos=true;
-					for (ele in gameState.solidObjects) {
+					for (var ele in gameState.solidObjects) {
 						if (gameState.solidObjects.hasOwnProperty(ele)) {
 							var obj=gameState.solidObjects[ele];
 							if (obj!=null && Math.sqrt(Math.pow(x-obj.position.posVec()[0],2) + Math.pow(y-obj.position.posVec()[2],2))<spacing) {
@@ -197,7 +197,7 @@ gameState.makeTree = function(obj,spacing) {
         var x = Math.random()*(maxX-minX) + minX;
         var y = Math.random()*(maxY-minY) + minY;
         var goodPos=true;
-        for (ele in gameState.solidObjects) {
+        for (var ele in gameState.solidObjects) {
             if (gameState.solidObjects.hasOwnProperty(ele)) {
                 var obj=gameState.solidObjects[ele];
                 if (obj!=null && Math.sqrt(Math.pow(x-obj.position.posVec()[0],2) + Math.pow(y-obj.position.posVec()[2],2))<spacing) {
@@ -216,7 +216,7 @@ gameState.makeTree = function(obj,spacing) {
 
 gameState.makeTrees = function(density,spacing) {
     if (spacing == undefined) spacing=1.4;
-    for (ele in gameState.sceneElements) {
+    for (var ele in gameState.sceneElements) {
         if (gameState.sceneElements.hasOwnProperty(ele)) {
             var obj=gameState.sceneElements[ele];
             if (obj instanceof FloorObject)
@@ -235,7 +235,7 @@ gameState.makeTrees = function(density,spacing) {
 }
 
 gameState.removeTrees = function() {
-    for (ele in gameState.solidObjects) {
+    for (var ele in gameState.solidObjects) {
         if (gameState.solidObjects.hasOwnProperty(ele)) {
             var obj=gameState.solidObjects[ele];
             if (obj instanceof TreeObject) {
@@ -248,7 +248,7 @@ gameState.removeTrees = function() {
 gameState.removeNearestTree = function() {
     var minDist=99999999;
     var minEle='';
-    for (ele in gameState.solidObjects) {
+    for (var ele in gameState.solidObjects) {
         if (gameState.solidObjects.hasOwnProperty(ele)) {
             var obj=gameState.solidObjects[ele];
             if (obj instanceof TreeObject) {
@@ -274,7 +274,7 @@ gameState.makeGrave = function(obj,spacing,density) {
         var x = Math.random()*(maxX-minX) + minX;
         var y = Math.random()*(maxY-minY) + minY;
         var goodPos=true;
-        for (ele in gameState.solidObjects) {
+        for (var ele in gameState.solidObjects) {
             if (gameState.solidObjects.hasOwnProperty(ele)) {
                 var obj=gameState.solidObjects[ele];
 				if (obj!=null && Math.sqrt(Math.pow(x-obj.position.posVec()[0],2) + Math.pow(y-obj.position.posVec()[2],2))<spacing) {
@@ -286,7 +286,7 @@ gameState.makeGrave = function(obj,spacing,density) {
         }
         if (goodPos) {
 			var inFront = Math.random()>.5;
-			var s = 0.005*(spacing/density)*(Math.random()*(15-9)+9);
+			var s = Math.min(0.005*(spacing/density)*(Math.random()*(15-9)+9),20);
 			//console.log(s)
             this.addGrave('genGrave'+(gameState.randomGraveCount++),[x,0,y],inFront,[{scale:s, loc:[x,0,y]}]);
             return true;
@@ -298,7 +298,7 @@ gameState.makeGrave = function(obj,spacing,density) {
 gameState.removeNearestGrave = function() {
     var minDist=99999999;
     var minEle='';
-    for (ele in gameState.solidObjects) {
+    for (var ele in gameState.solidObjects) {
         if (gameState.solidObjects.hasOwnProperty(ele)) {
             var obj=gameState.solidObjects[ele];
             if (obj instanceof Grave) {
@@ -315,7 +315,7 @@ gameState.removeNearestGrave = function() {
 
 gameState.makeGraves = function(density,spacing) {
     if (spacing == undefined) spacing=5.0;
-    for (ele in gameState.sceneElements) {
+    for (var ele in gameState.sceneElements) {
         if (gameState.sceneElements.hasOwnProperty(ele)) {
             var obj=gameState.sceneElements[ele];
             if (obj instanceof FloorObject)
@@ -355,12 +355,12 @@ gameState.addGrave = function(name,location,inFront,trips) {
     this.solidObjects[name] = (new Grave(gameState,inFront,assets.graveImg,assets.graveOnImg,assets.graveObj,assets.ghostImg,assets.ghostObj,assets.ghostSoundUp,assets.ghostSoundDown,0.4,location));
     var tripCount=0;
     if (trips !== undefined)
-		for (trip of trips) {
+		for (var trip of trips) {
 			var tripObj = new Trip(gameState.solidObjects[name],assets.tripImg,assets.tripObj,trip.scale,trip.loc);
-			if( null==tripObj.collisionCheck(gameState.camera,[4,0,0],false) &&
-				null==tripObj.collisionCheck(gameState.camera,[-4,0,0],false) &&
-				null==tripObj.collisionCheck(gameState.camera,[0,0,4],false) &&
-				null==tripObj.collisionCheck(gameState.camera,[0,0,-4],false))
+			if( null==tripObj.collisionCheck(gameState.camera,[3.5,0,0],false) &&
+				null==tripObj.collisionCheck(gameState.camera,[-3.5,0,0],false) &&
+				null==tripObj.collisionCheck(gameState.camera,[0,0,3.5],false) &&
+				null==tripObj.collisionCheck(gameState.camera,[0,0,-3.5],false))
 				this.collidableObjects.push(tripObj);
 			else
 				this.solidObjects[name]=null;
@@ -391,7 +391,7 @@ gameState.loadLevel = function(loc) {
             myself.collidableObjects = [];
             myself.dying = -1;
             myself.changingLevel=-1;
-            for (name in loaded) {
+            for (var name in loaded) {
                 if (loaded[name].type=="Floor") 
                     myself.addFloor(name,loaded[name].scale,loaded[name].location);
                 else if (loaded[name].type=="Tree") 
@@ -417,8 +417,8 @@ gameState.loadLevel = function(loc) {
             
             if (loc == 'rand.level') {
 				myself.makeGoal();
-				myself.makeGraves(0.002*myself.currentLevel);
-				myself.makeTrees(0.2);
+				myself.makeGraves(myself.currentLevel/400.0);
+				myself.makeTrees(myself.currentLevel/50.0);
 			}
           } else {
             console.error(xhr.statusText);
@@ -444,11 +444,11 @@ gameState.nextLevel = function() {
 
 
 //New
-function drawTexturedObject(texturedObject,perspectiveMat) {
+function drawTexturedObject(texturedObject,perspectiveMat,objectsToDraw) {
     //check if it's loaded
     if (texturedObject==null) return;
     for (var part of texturedObject.getParts()) {
-        drawTexturedObject(part,perspectiveMat);
+        drawTexturedObject(part,perspectiveMat,objectsToDraw);
     }
     if (texturedObject.obj === null ||
         texturedObject.obj.vertexPositionBuffer === null ||
@@ -461,16 +461,31 @@ function drawTexturedObject(texturedObject,perspectiveMat) {
 		if (gameState.invincible)
 			myGL.drawTexturedObjectPart(texturedObject,perspectiveMat.translate([0,-0.1*texturedObject.scale,0]));
 	}
+	else if (texturedObject instanceof TreePart) {
+	    if (objectsToDraw[texturedObject.type] == undefined)
+	        objectsToDraw[texturedObject.type] = [texturedObject];
+        else
+            objectsToDraw[texturedObject.type].push(texturedObject);
+	}
     else
         myGL.drawTexturedObjectPart(texturedObject,perspectiveMat);
     
+}
+
+function drawTexturedObjects(objectsToDraw,perspectiveMat) {
+    for (var objType in objectsToDraw) {
+        if (objectsToDraw.hasOwnProperty(objType)) {
+            var objs=objectsToDraw[objType];
+            myGL.drawTexturedObjects(objs,perspectiveMat);
+        }
+    }
 }
 
 function drawMap() {
     var drawing=false;
     var d;
     var orth;
-    for (ele in gameState.solidObjects) {
+    for (var ele in gameState.solidObjects) {
         if (gameState.solidObjects.hasOwnProperty(ele)) {
             var obj=gameState.solidObjects[ele];
             if (obj instanceof Grave)
@@ -502,7 +517,7 @@ function drawMap() {
     }
     if (drawing) {
         
-        for (obj of gameState.collidableObjects) {
+        for (var obj of gameState.collidableObjects) {
             if (obj instanceof Ghost) {
                 var relPos = obj.position.posVec().minus(gameState.playerLocation());
                 var dist=relPos.mag();
@@ -532,13 +547,13 @@ function animate() {
         
         if (gameState.changingLevel==-2) {
             myGL.setLighting([0.5*3,0.5*3,0.5*3], 
-                             [0.3,1,0], 
+                             [-0.3,1,0], 
                              [0.3,0.24,0.3]);
         }
         else if (gameState.changingLevel>=0 && (gameState.changingLevel+=(elapsed/16.0)) < gameState.changingLevel_time) {
             var mult = 1+ 2*(gameState.changingLevel)/(gameState.changingLevel_time)
             myGL.setLighting([0.5*mult,0.5*mult,0.5*mult], 
-                             [0.3,1,0], 
+                             [-0.3,1,0], 
                              [0.3,0.24,0.3]);
         }
         else if (gameState.changingLevel >= gameState.changingLevel_time) {
@@ -546,7 +561,7 @@ function animate() {
         }
         else if (gameState.dying >=0 && (gameState.dying+=(elapsed/16.0)) < gameState.dying_time) {
             myGL.setLighting([0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time], 
-                             [0.3,1,0], 
+                             [-0.3,1,0], 
                              [0.3,0.24*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.3*(gameState.dying_time-gameState.dying)/gameState.dying_time]);
            
         }
@@ -556,18 +571,18 @@ function animate() {
         else {
             
             myGL.setLighting([0.5,0.5,0.5], 
-                             [0.3,1,0], 
+                             [-0.3,1,0], 
                              [0.3,0.24,0.3]);
                              
                              
             controller.onTick(elapsed);
-            for (ele in gameState.sceneElements) 
+            for (var ele in gameState.sceneElements) 
                 if (gameState.sceneElements.hasOwnProperty(ele))
                     gameState.sceneElements[ele].animate(elapsed);
-            for (ele in gameState.solidObjects) 
+            for (var ele in gameState.solidObjects) 
                 if (gameState.solidObjects.hasOwnProperty(ele) && gameState.solidObjects[ele]!=null)
                     gameState.solidObjects[ele].animate(elapsed);
-            for (ele in gameState.collidableObjects) 
+            for (var ele in gameState.collidableObjects) 
                 if (gameState.collidableObjects.hasOwnProperty(ele))
                     gameState.collidableObjects[ele].animate(elapsed);
         }
@@ -786,21 +801,23 @@ function webGLStart() {
         var perspectiveMat = (new Mat4()).perspective(gameState.camera.fieldOfView,gameState.camera.lookingAt,gameState.camera.lookingFrom,gameState.camera.up);
         
         
-        
-        for (ele in gameState.sceneElements) {
+        var objectsToDraw={}
+        for (var ele in gameState.sceneElements) {
             if (gameState.sceneElements.hasOwnProperty(ele))
-        	    drawTexturedObject(gameState.sceneElements[ele],perspectiveMat);
+        	    drawTexturedObject(gameState.sceneElements[ele],perspectiveMat,objectsToDraw);
+    	    
         }
         
-        for (ele in gameState.solidObjects) {
+        for (var ele in gameState.solidObjects) {
             if (gameState.solidObjects.hasOwnProperty(ele))
-        	    drawTexturedObject(gameState.solidObjects[ele],perspectiveMat);
+        	    drawTexturedObject(gameState.solidObjects[ele],perspectiveMat,objectsToDraw);
         }
         
-        for (ele in gameState.collidableObjects) {
+        for (var ele in gameState.collidableObjects) {
             if (gameState.collidableObjects.hasOwnProperty(ele))
-        	    drawTexturedObject(gameState.collidableObjects[ele],perspectiveMat);
+        	    drawTexturedObject(gameState.collidableObjects[ele],perspectiveMat,objectsToDraw);
         }
+        drawTexturedObjects(objectsToDraw,perspectiveMat);
         
         drawMap();
         
