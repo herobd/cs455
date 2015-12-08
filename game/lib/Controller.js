@@ -199,6 +199,10 @@ define( function() {
                 stickRx = -(this.mouseX-this.windowWidth/2.0)/(this.windowWidth/2.0);
                 stickRy = -(this.mouseY-this.windowHeight/2.0)/(this.windowHeight/2.0);
                 
+                if (stickRx>1 || stickRx<-1 || stickRy>1 || stickRy<-1) {
+                    stickRx = stickRy =0;
+                }
+                
                 if (stickLx !== 0 && Math.abs(stickLx) < noiseThresh) {
                     stickLx=0;
                 }
