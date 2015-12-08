@@ -529,16 +529,52 @@ function animate() {
     var timeNow = new Date().getTime();
     if (lastTime != 0) {
         var elapsed = timeNow - lastTime;
-        controller.onTick(elapsed);
-        for (ele in gameState.sceneElements) 
-            if (gameState.sceneElements.hasOwnProperty(ele))
-                gameState.sceneElements[ele].animate(elapsed);
-        for (ele in gameState.solidObjects) 
-            if (gameState.solidObjects.hasOwnProperty(ele) && gameState.solidObjects[ele]!=null)
-                gameState.solidObjects[ele].animate(elapsed);
-        for (ele in gameState.collidableObjects) 
-            if (gameState.collidableObjects.hasOwnProperty(ele))
-                gameState.collidableObjects[ele].animate(elapsed);
+        
+        if (gameState.changingLevel==-2) {
+            myGL.setLighting([0.5*3,0.5*3,0.5*3], 
+                             [0.3,1,0], 
+                             [0.3,0.24,0.3]);
+        }
+        else if (gameState.changingLevel>=0 && (gameState.changingLevel+=(elapsed/16.0)) < gameState.changingLevel_time) {
+            var mult = 1+ 2*(gameState.changingLevel)/(gameState.changingLevel_time)
+            myGL.setLighting([0.5*mult,0.5*mult,0.5*mult], 
+                             [0.3,1,0], 
+                             [0.3,0.24,0.3]);
+        }
+        else if (gameState.changingLevel >= gameState.changingLevel_time) {
+            gameState.loadLevel(gameState.currentLevelFile);
+        }
+        else if (gameState.dying >=0 && (gameState.dying+=(elapsed/16.0)) < gameState.dying_time) {
+            myGL.setLighting([0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time], 
+                             [0.3,1,0], 
+                             [0.3,0.24*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.3*(gameState.dying_time-gameState.dying)/gameState.dying_time]);
+           
+        }
+        else if (gameState.dying >= gameState.dying_time) {
+            gameState.restartLevel();
+        }
+        else {
+            
+            myGL.setLighting([0.5,0.5,0.5], 
+                             [0.3,1,0], 
+                             [0.3,0.24,0.3]);
+                             
+                             
+            controller.onTick(elapsed);
+            for (ele in gameState.sceneElements) 
+                if (gameState.sceneElements.hasOwnProperty(ele))
+                    gameState.sceneElements[ele].animate(elapsed);
+            for (ele in gameState.solidObjects) 
+                if (gameState.solidObjects.hasOwnProperty(ele) && gameState.solidObjects[ele]!=null)
+                    gameState.solidObjects[ele].animate(elapsed);
+            for (ele in gameState.collidableObjects) 
+                if (gameState.collidableObjects.hasOwnProperty(ele))
+                    gameState.collidableObjects[ele].animate(elapsed);
+        }
+        
+        
+        
+        
         /*if (logger++>200) {
              logger=0;
              console.log('FROM: x=' + gameState.camera.lookingFrom[0] + ', y=' + gameState.camera.lookingFrom[1] + ', z=' + gameState.camera.lookingFrom[2]);
@@ -742,39 +778,8 @@ function webGLStart() {
         
         if (gameState.invincible) gameState.dying=-1;
         
-        if (this.changingLevel==-2) {
-            myGL.setLighting([0.5*3,0.5*3,0.5*3], 
-                             [0.3,1,0], 
-                             [0.3,0.24,0.3]);
-        }
-        else if (gameState.changingLevel>=0 && gameState.changingLevel++ < gameState.changingLevel_time) {
-            var mult = 1+ 2*(gameState.changingLevel)/(gameState.changingLevel_time)
-            myGL.setLighting([0.5*mult,0.5*mult,0.5*mult], 
-                             [0.3,1,0], 
-                             [0.3,0.24,0.3]);
-        }
-        else if (gameState.changingLevel >= gameState.changingLevel_time) {
-            gameState.loadLevel(gameState.currentLevelFile);
-        }
-        else if (gameState.dying >=0 && gameState.dying++ < gameState.dying_time) {
-            myGL.setLighting([0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.5*(gameState.dying_time-gameState.dying)/gameState.dying_time], 
-                             [0.3,1,0], 
-                             [0.3,0.24*(gameState.dying_time-gameState.dying)/gameState.dying_time,0.3*(gameState.dying_time-gameState.dying)/gameState.dying_time]);
-           
-        }
-        else if (gameState.dying >= gameState.dying_time) {
-            gameState.restartLevel();
-        }
-        else {
-            //animate(gameState.sceneElements);
-            //animate(gameState.solidObjects);
-            //animate(gameState.collidableObjects);
-            animate();
-            myGL.setLighting([0.5,0.5,0.5], 
-                             [0.3,1,0], 
-                             [0.3,0.24,0.3]);
-        }
         
+        animate();
         myGL.clearScene();
         
         
