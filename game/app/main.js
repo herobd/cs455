@@ -26,7 +26,7 @@ var assets={
     mapBlank : 'assests/mapBlank.png',
     mapGrave : 'assests/graveIcon.png',
     mapGhost : 'assests/ghostIcon.png',
-    levels : ['0.level','1.level','2.level','rand.level']
+    levels : ['0.level','2.level','rand.level']
 }
 
 assets.preload = function() {

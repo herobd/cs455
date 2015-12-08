@@ -594,13 +594,15 @@ Grave.prototype.seen = function(calling) {
         this.state=1;
         var moveSpeed;
         var location;
+        var thisPos = this.position.posVec();
+        thisPos[1]=1.0;
         if (this.inFront) {
             moveSpeed=0.0025;
-            location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(0.4).plus(this.position.posVec());
+            location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(0.4).plus(thisPos);
         }
         else {
             moveSpeed=0.005;
-            location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(3.0).plus(this.position.posVec());
+            location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(3.0).plus(thisPos);
         }
         var chaser= new Ghost(this.gameStateRef,moveSpeed,this.ghostImg, this.ghostObj,0.2,location);
         chaser.spawner=this;
