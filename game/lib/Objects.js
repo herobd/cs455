@@ -410,9 +410,9 @@ function SolidObject(img,obj,radius,scale,positionMatrix,owner) {
 SolidObject.prototype = Object.create(GenericObject.prototype);
 SolidObject.prototype.constructor = SolidObject;
 SolidObject.prototype.activate = function() {};
-SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
+SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec,activate)
 {
-    
+    if (activate==undefined) activate=true;
     
     var futurePos = this.position.translate(myMoveVec);
     var curDist = Math.sqrt( Math.pow(this.position.get(0,3)-otherSolidObject.position.get(0,3),2) + 
@@ -422,15 +422,17 @@ SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
                       // Math.pow(futurePos.get(1,3)-otherSolidObject.position.get(1,3),2) + 
                        Math.pow(futurePos.get(2,3)-otherSolidObject.position.get(2,3),2) ) ;
     //console.log(dist);
-    if (futDist-(this.boundingRadius+otherSolidObject.boundingRadius) <= 0 && futDist<curDist) {
+    if (futDist-(this.boundingRadius+otherSolidObject.boundingRadius) <= 0 && futDist<=curDist) {
         
         if (otherSolidObject.plane)
-            return otherSolidObject.collisionCheckPlane(this,myMoveVec.scale(-1));
+            return otherSolidObject.collisionCheckPlane(this,myMoveVec.scale(-1),activate);
         if (this.plane)
-            return this.collisionCheckPlane(otherSolidObject,myMoveVec);
+            return this.collisionCheckPlane(otherSolidObject,myMoveVec,activate);
         
-        this.activate();
-        otherSolidObject.activate();
+        if (activate) {
+			this.activate();
+			otherSolidObject.activate();
+		}
         return (new Vec([otherSolidObject.position.get(0,3)-this.position.get(0,3),
                        0,
                        otherSolidObject.position.get(2,3)-this.position.get(2,3)])).normalize();
@@ -443,8 +445,9 @@ SolidObject.prototype.collisionCheck = function(otherSolidObject,myMoveVec)
     }
     return null;
 }
-SolidObject.prototype.collisionCheckPlane = function(otherSolidObject,myMoveVec)
+SolidObject.prototype.collisionCheckPlane = function(otherSolidObject,myMoveVec,activate)
 {
+	if (activate==undefined) activate=true;
     var futurePos = this.position.translate(myMoveVec).posVec();
     var thisNormal = this.rotation.multiplyPoint([0,0,1]);//we assum this is standard orientation for walls
     var d = -1*this.position.posVec().dot(thisNormal);
@@ -454,8 +457,10 @@ SolidObject.prototype.collisionCheckPlane = function(otherSolidObject,myMoveVec)
     //console.log("cur = "+curDist);
     //console.log("fut = "+futDist);
     if (curDist!==0 && curDist*futDist<=0) {
-        this.activate();
-        otherSolidObject.activate();
+        if (activate) {
+			this.activate();
+			otherSolidObject.activate();
+		}
         if (curDist>0)
             return thisNormal;
         else
@@ -523,13 +528,13 @@ function TreeObject(density,barkImg,leafImg,trunkObj,branchObj,branchLeafObj,sma
 		var height = spacingH[i]*4.5 -2
 		if (height<0) {
 			this.parts.push(new TreePart(barkImg,branchObj,15,0.3,[0,height,0],this));
-			this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
+			this.parts[this.parts.length-1].setRotation((new Mat4()).rotateYAxis(360*spacingR[i]));
 			this.parts.push(new TreePart(leafImg,branchLeafObj,5,0.3,[0,height,0],this));
-			this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
+			this.parts[this.parts.length-1].setRotation( (new Mat4()).rotateYAxis(360*spacingR[i]));
 		}
 		else {
 			this.parts.push(new TreePart(leafImg,smallBranchObj,5,0.3,[0,height-0.5,0],this));
-			this.parts[this.parts.length-1].rotation = (new Mat4()).rotateYAxis(360*spacingR[i]);
+			this.parts[this.parts.length-1].setRotation( (new Mat4()).rotateYAxis(360*spacingR[i]));
 		}
         
     }
@@ -561,8 +566,8 @@ Ghost.prototype.activate = function() {
 Ghost.prototype.animate = function(elapsed) {
     var toPlayer = (this.gameStateRef.playerLocation().minus(this.position.posVec())).normalize();
     var angleToPlayer = Math.atan2(toPlayer[2],toPlayer[0]);
-    this.rotation = (new Mat4()).rotateYAxis(-180.0*angleToPlayer/Math.PI);
-    this.position = this.position.translate(toPlayer.scale(elapsed*this.moveSpeed));
+    this.setRotation ( (new Mat4()).rotateYAxis(-180.0*angleToPlayer/Math.PI));
+    this.setPosition ( this.position.translate(toPlayer.scale(elapsed*this.moveSpeed)));
     this.collisionCheck(this.gameStateRef.camera,toPlayer.scale(elapsed*this.moveSpeed));
 }
 ////////////////////////////
@@ -590,10 +595,10 @@ Grave.prototype.seen = function(calling) {
         var location;
         if (this.inFront) {
             moveSpeed=0.0025;
-            location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(0.5).plus(this.position.posVec());
+            location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(0.4).plus(this.position.posVec());
         }
         else {
-            moveSpeed=0.004;
+            moveSpeed=0.005;
             location = (this.gameStateRef.playerLocation().minus(this.position.posVec())).scale(3.0).plus(this.position.posVec());
         }
         var chaser= new Ghost(this.gameStateRef,moveSpeed,this.ghostImg, this.ghostObj,0.2,location);
@@ -633,8 +638,9 @@ Grave.prototype.setTripLoc = function(trip) {
 Grave.prototype.getTrips = function() {
     var ret = [];
     for (trip of this.trips) {
-        ret.push({sclae:trip.scale, loc:trip.position.posVec()});
+        ret.push({scale:trip.scale, loc:trip.position.posVec().flat()});
     }
+    return ret;
 }
 
 ////////////////
@@ -671,7 +677,7 @@ Goal.prototype.activate = function() {
 Goal.prototype.animate = function(elapsed) {
     //console.log(this.gameStateRef.playerLocation().distance(this.position.posVec()))
     var spinSpeed = 0.1+0.6*(8-Math.min(8,this.gameStateRef.playerLocation().distance(this.position.posVec())));
-    this.rotation = this.rotation.rotateYAxis(spinSpeed*elapsed);
+    this.setRotation ( this.rotation.rotateYAxis(spinSpeed*elapsed));
 }
 ////////////////////////////////
 function FloorObject(img,obj,scale,positionMatrix,owner) {

@@ -71,23 +71,23 @@ var noz=false;
 
     function Mat4(copy) {
         if (copy === undefined) { 
-            this.values = [ [1, 0, 0, 0],
-                            [0, 1, 0, 0],
-                            [0, 0, 1, 0],
-                            [0, 0, 0, 1] ];
+            this.values = [ 1, 0, 0, 0,
+                            0, 1, 0, 0,
+                            0, 0, 1, 0,
+                            0, 0, 0, 1 ];
         }
         else {
-            this.values = [ [copy.get(0,0), copy.get(0,1), copy.get(0,2), copy.get(0,3)],
-                            [copy.get(1,0), copy.get(1,1), copy.get(1,2), copy.get(1,3)],
-                            [copy.get(2,0), copy.get(2,1), copy.get(2,2), copy.get(2,3)],
-                            [copy.get(3,0), copy.get(3,1), copy.get(3,2), copy.get(3,3)] ];
+            this.values = [ copy.get(0,0), copy.get(0,1), copy.get(0,2), copy.get(0,3),
+                            copy.get(1,0), copy.get(1,1), copy.get(1,2), copy.get(1,3),
+                            copy.get(2,0), copy.get(2,1), copy.get(2,2), copy.get(2,3),
+                            copy.get(3,0), copy.get(3,1), copy.get(3,2), copy.get(3,3) ];
         }
     }
     Mat4.prototype.get = function(row,col) {
-            return this.values[row][col];
+            return this.values[row*4+col];
         };
     Mat4.prototype.set = function(row,col,value) {
-            this.values[row][col]=value;
+            this.values[row*4+col]=value;
         };
     Mat4.prototype.multiply = function(otherMat) {
         var toRet = new Mat4();
@@ -97,54 +97,54 @@ var noz=false;
                 for (var i=0; i<4; i++) {
                     val += this.get(row,i)*otherMat.get(i,col);
                 }
-                toRet.values[row][col]=val;
+                toRet.values[row*4+col]=val;
             }
         return toRet;
     };
     
     Mat4.prototype.translate = function(vec) {
             var trans = new Mat4();
-            trans.values = [ [1, 0, 0, vec[0]],
-                             [0, 1, 0, vec[1]],
-                             [0, 0, 1, vec[2]],
-                             [0, 0, 0, 1] ];
+            trans.values = [ 1, 0, 0, vec[0],
+                             0, 1, 0, vec[1],
+                             0, 0, 1, vec[2],
+                             0, 0, 0, 1 ];
             return trans.multiply(this);
     };
     
     Mat4.prototype.scale = function(vec) {
             var sc = new Mat4();
-            sc.values =    [ [vec[0], 0, 0, 0],
-                             [0, vec[1], 0, 0],
-                             [0, 0, vec[2], 0],
-                             [0, 0, 0, 1] ];
+            sc.values =    [ vec[0], 0, 0, 0,
+                             0, vec[1], 0, 0,
+                             0, 0, vec[2], 0,
+                             0, 0, 0, 1 ];
             return sc.multiply(this);
     };
     
     Mat4.prototype.rotateXAxis = function(angle) {
             var theta = angle*Math.PI/180;
             var rot = new Mat4();
-            rot.values =   [ [1,               0,                0, 0],
-                             [0, Math.cos(theta), -Math.sin(theta), 0],
-                             [0, Math.sin(theta),  Math.cos(theta), 0],
-                             [0,               0,                0, 1] ];
+            rot.values =   [ 1,               0,                0, 0,
+                             0, Math.cos(theta), -Math.sin(theta), 0,
+                             0, Math.sin(theta),  Math.cos(theta), 0,
+                             0,               0,                0, 1 ];
             return rot.multiply(this);
     };
     Mat4.prototype.rotateYAxis = function(angle) {
             var theta = angle*Math.PI/180;
             var rot = new Mat4();
-            rot.values =   [ [ Math.cos(theta), 0, Math.sin(theta), 0],
-                             [ 0              , 1, 0              , 0],
-                             [-Math.sin(theta), 0, Math.cos(theta), 0],
-                             [0               , 0, 0              , 1] ];
+            rot.values =   [  Math.cos(theta), 0, Math.sin(theta), 0,
+                              0              , 1, 0              , 0,
+                             -Math.sin(theta), 0, Math.cos(theta), 0,
+                             0               , 0, 0              , 1 ];
             return rot.multiply(this);
     };
     Mat4.prototype.rotateZAxis = function(angle) {
             var theta = angle*Math.PI/180;
             var rot = new Mat4();
-            rot.values =   [ [ Math.cos(theta),-Math.sin(theta), 0, 0],
-                             [ Math.sin(theta), Math.cos(theta), 0, 0],
-                             [               0,               0, 1, 0],
-                             [               0,               0, 0, 1] ];
+            rot.values =   [  Math.cos(theta),-Math.sin(theta), 0, 0,
+                              Math.sin(theta), Math.cos(theta), 0, 0,
+                                            0,               0, 1, 0,
+                                            0,               0, 0, 1 ];
             return rot.multiply(this);
     };
 
@@ -159,10 +159,10 @@ var noz=false;
 	  V.normalize();
 	  
         var M = new Mat4();
-        M.values =  [ [U[0], U[1], U[2], 0],
-		        [V[0], V[1], V[2], 0],
-		        [N[0], N[1], N[2], 0],
-		        [0,    0,    0,    1] ];
+        M.values =  [ U[0], U[1], U[2], 0,
+		        V[0], V[1], V[2], 0,
+		        N[0], N[1], N[2], 0,
+		        0,    0,    0,    1 ];
 	
         //is this the right order?
         var basis_change = M.multiply((new Mat4()).translate([-lookAt[0],-lookAt[1],-lookAt[2]]));
@@ -384,10 +384,10 @@ var noz=false;
             console.log("error, trying to invert non-invertable matrix");
             return ret;
         }
-        ret.values =  [ [inv[0]/det, inv[4]/det, inv[8]/det,  inv[12]/det],
-                        [inv[1]/det, inv[5]/det, inv[9]/det,  inv[13]/det],
-                        [inv[2]/det, inv[6]/det, inv[10]/det, inv[14]/det],
-                        [inv[3]/det, inv[7]/det, inv[11]/det, inv[15]/det] ];
+        ret.values =  [ inv[0]/det, inv[4]/det, inv[8]/det,  inv[12]/det,
+                        inv[1]/det, inv[5]/det, inv[9]/det,  inv[13]/det,
+                        inv[2]/det, inv[6]/det, inv[10]/det, inv[14]/det,
+                        inv[3]/det, inv[7]/det, inv[11]/det, inv[15]/det ];
         return ret;
     };
     

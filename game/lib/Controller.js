@@ -26,7 +26,13 @@ define( function() {
         currentlyReleasedKeys : {},
         
         onTick : function(elapsed) {
-            var gamepad = navigator.getGamepads()[this.player];
+			var gamePads=navigator.getGamepads();
+            var gamepad = undefined;
+            for (var i=0; i< gamePads.length; i++) {
+				gamepad = gamePads[i];
+				//console.log(gamepad)
+				if (gamepad !== undefined) break;
+			}
     
             var cind = document.getElementById("cind");
             if (gamepad !== undefined && gamepad !== null) {
@@ -53,7 +59,7 @@ define( function() {
 	                    gamepad.axes[i]=0;
 	                }
 	            }*/
-                if (gamepad.id.substring(0,17) === "Holtek Controller"  || gamepad.id.substring(0,4) === "Xbox") {//xbox
+                if (gamepad.id.substring(0,17) === "Holtek Controller"  || gamepad.id.substring(0,4) === "Xbox" || gamepad.id.search(/Microsoft/)!=-1) {//xbox
                     stickLx = -gamepad.axes[0];
                     stickLy = gamepad.axes[1];
                     stickRx = -gamepad.axes[2];

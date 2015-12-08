@@ -23,9 +23,10 @@ var assets={
     goalObj : 'assests/goal.obj',
     goalSound : 'assests/Japanese Temple Bell Small-SoundBible.com-113624364.mp3',
     mapBg : 'assests/map.png',
+    mapBlank : 'assests/mapBlank.png',
     mapGrave : 'assests/graveIcon.png',
     mapGhost : 'assests/ghostIcon.png',
-    levels : ['0.level','test.level','test2.level']
+    levels : ['2.level','0.level','1.level','2.level','3.level','rand.level']
 }
 
 assets.preload = function() {
@@ -90,6 +91,8 @@ gameState.mapY=2;
 gameState.mapSize=80;
 gameState.mapImageUI=new Image();
 gameState.mapImageUI.src = assets.mapBg;
+gameState.mapImageBUI=new Image();
+gameState.mapImageBUI.src = assets.mapBlank;
 gameState.graveImageUI=new Image();
 gameState.graveImageUI.src = assets.mapGrave;
 gameState.ghostImageUI=new Image();
@@ -140,6 +143,47 @@ gameState.saveLevel = function() {
     //json.assets = gameState.assests; 
     
     window.open('data:text/json;charset=utf-8,' + escape(JSON.stringify(json)));
+}
+
+gameState.makeGoal = function(spacing) {
+	if (spacing == undefined) spacing=1.4;
+    for (ele in gameState.sceneElements) {
+        if (gameState.sceneElements.hasOwnProperty(ele)) {
+            var obj=gameState.sceneElements[ele];
+            if (obj instanceof FloorObject)
+            {
+	
+				var minX=obj.position.posVec()[0]+spacing/2.0;
+				var minY=obj.position.posVec()[2]+spacing/2.0;
+				var maxX = minX+obj.scale-spacing;
+				var maxY = minY+obj.scale-spacing;
+				if (spacing == undefined) spacing=1.4;
+				for(var i=0; i<100; i++) {
+					var x = Math.random()*(maxX-minX) + minX;
+					var y = Math.random()*(maxY-minY) + minY;
+					var goodPos=true;
+					for (ele in gameState.solidObjects) {
+						if (gameState.solidObjects.hasOwnProperty(ele)) {
+							var obj=gameState.solidObjects[ele];
+							if (obj!=null && Math.sqrt(Math.pow(x-obj.position.posVec()[0],2) + Math.pow(y-obj.position.posVec()[2],2))<spacing) {
+								goodPos=false;
+								break;
+							}
+							if (Math.sqrt(Math.pow(x-gameState.camera.position.posVec()[0],2) + Math.pow(y-gameState.camera.position.posVec()[2],2))<25) {
+								goodPos=false;
+								break;
+							}
+						}
+					}
+					if (goodPos) {
+						this.addGoal('genGoal',[x,0,y]);
+						return true;
+					}
+				}
+				return false;
+			}
+		}
+	}
 }
 
 gameState.randomTreeCount=0;
@@ -219,6 +263,76 @@ gameState.removeNearestTree = function() {
     gameState.solidObjects[minEle]=null;
 }
 
+gameState.randomGraveCount=0;
+gameState.makeGrave = function(obj,spacing,density) {
+    var minX=obj.position.posVec()[0]+spacing/2.0;
+    var minY=obj.position.posVec()[2]+spacing/2.0;
+    var maxX = minX+obj.scale-spacing;
+    var maxY = minY+obj.scale-spacing;
+    if (spacing == undefined) spacing=1.4;
+    for(var i=0; i<100; i++) {
+        var x = Math.random()*(maxX-minX) + minX;
+        var y = Math.random()*(maxY-minY) + minY;
+        var goodPos=true;
+        for (ele in gameState.solidObjects) {
+            if (gameState.solidObjects.hasOwnProperty(ele)) {
+                var obj=gameState.solidObjects[ele];
+				if (obj!=null && Math.sqrt(Math.pow(x-obj.position.posVec()[0],2) + Math.pow(y-obj.position.posVec()[2],2))<spacing) {
+					goodPos=false;
+					break;
+				}
+            }
+            
+        }
+        if (goodPos) {
+			var inFront = Math.random()>.5;
+			var s = 0.005*(spacing/density)*(Math.random()*(15-9)+9);
+			//console.log(s)
+            this.addGrave('genGrave'+(gameState.randomGraveCount++),[x,0,y],inFront,[{scale:s, loc:[x,0,y]}]);
+            return true;
+        }
+    }
+    return false;
+}
+
+gameState.removeNearestGrave = function() {
+    var minDist=99999999;
+    var minEle='';
+    for (ele in gameState.solidObjects) {
+        if (gameState.solidObjects.hasOwnProperty(ele)) {
+            var obj=gameState.solidObjects[ele];
+            if (obj instanceof Grave) {
+                var dist = Math.sqrt(Math.pow(gameState.playerLocation()[0]-obj.position.posVec()[0],2) + Math.pow(gameState.playerLocation()[2]-obj.position.posVec()[2],2));
+                if (dist<minDist) {
+                    minDist=dist;
+                    minEle=ele;
+                }
+            }
+        }
+    }
+    gameState.solidObjects[minEle]=null;
+}
+
+gameState.makeGraves = function(density,spacing) {
+    if (spacing == undefined) spacing=5.0;
+    for (ele in gameState.sceneElements) {
+        if (gameState.sceneElements.hasOwnProperty(ele)) {
+            var obj=gameState.sceneElements[ele];
+            if (obj instanceof FloorObject)
+            {
+                var minX=obj.position.posVec()[0]+spacing/2.0;
+                var minY=obj.position.posVec()[2]+spacing/2.0;
+                var maxX = minX+obj.scale-spacing;
+                var maxY = minY+obj.scale-spacing;
+                var n = density*((maxX-minX)*(maxY-minY));
+                for (var i=0; i<n; i++) {
+                    this.makeGrave(obj,spacing,density);
+                }
+            }
+        }
+    }
+}
+
 
 //These act as handles for level building
 gameState.addFloor = function(name,scale,location) {
@@ -240,9 +354,23 @@ gameState.addGoal = function(name,location) {
 gameState.addGrave = function(name,location,inFront,trips) {
     this.solidObjects[name] = (new Grave(gameState,inFront,assets.graveImg,assets.graveOnImg,assets.graveObj,assets.ghostImg,assets.ghostObj,assets.ghostSoundUp,assets.ghostSoundDown,0.4,location));
     var tripCount=0;
-    for (trip of trips) {
-        this.collidableObjects.push(new Trip(gameState.solidObjects[name],assets.tripImg,assets.tripObj,trip.scale,trip.loc)); 
-    }          
+    if (trips !== undefined)
+		for (trip of trips) {
+			var tripObj = new Trip(gameState.solidObjects[name],assets.tripImg,assets.tripObj,trip.scale,trip.loc);
+			if( null==tripObj.collisionCheck(gameState.camera,[4,0,0],false) &&
+				null==tripObj.collisionCheck(gameState.camera,[-4,0,0],false) &&
+				null==tripObj.collisionCheck(gameState.camera,[0,0,4],false) &&
+				null==tripObj.collisionCheck(gameState.camera,[0,0,-4],false))
+				this.collidableObjects.push(tripObj);
+			else
+				this.solidObjects[name]=null;
+			
+		}          
+}
+
+gameState.addTrip = function(name,scale,location) {
+	this.collidableObjects.push(new Trip(gameState.solidObjects[name],assets.tripImg,assets.tripObj,scale,location)); 
+    
 }
 
 gameState.loadLevel = function(loc) {
@@ -286,6 +414,12 @@ gameState.loadLevel = function(loc) {
             myself.camera.lookingAt= new Vec(myself.startingLook);
             myself.camera.lookingFrom= new Vec(myself.startingLoc);
             myself.camera.position = (new Mat4()).translate([myself.startingLoc[0],0,myself.startingLoc[2]]);
+            
+            if (loc == 'rand.level') {
+				myself.makeGoal();
+				myself.makeGraves(0.002*myself.currentLevel);
+				myself.makeTrees(0.2);
+			}
           } else {
             console.error(xhr.statusText);
           }
@@ -302,7 +436,8 @@ gameState.restartLevel = function() {
 }
 
 gameState.nextLevel = function() {
-    this.currentLevelFile = this.levels[++this.currentLevel]
+	if (++this.currentLevel < this.levels.length)
+		this.currentLevelFile = this.levels[this.currentLevel]
     this.changingLevel=0;
     //this.loadLevel(this.currentLevelFile);
 }
@@ -321,12 +456,11 @@ function drawTexturedObject(texturedObject,perspectiveMat) {
         texturedObject.obj.vertexIndexBuffer === null)
         return;
     
-    if (texturedObject.texture.glTexture === undefined) {
-        console.log('undef')
-    }
     
-    if (texturedObject instanceof Trip && gameState.invincible)
-        myGL.drawTexturedObjectPart(texturedObject,perspectiveMat.translate([0,-0.1*texturedObject.scale,0]));
+    if (texturedObject instanceof Trip) {
+		if (gameState.invincible)
+			myGL.drawTexturedObjectPart(texturedObject,perspectiveMat.translate([0,-0.1*texturedObject.scale,0]));
+	}
     else
         myGL.drawTexturedObjectPart(texturedObject,perspectiveMat);
     
@@ -355,7 +489,7 @@ function drawMap() {
                     var relPos = obj.position.posVec().minus(gameState.playerLocation());
                     var dist=relPos.mag();
                     relPos = relPos.normalize().scale((Math.min(14,dist)/15)*gameState.mapSize/2);
-                    var proX = relPos.dot(orth);
+                    var proX = -relPos.dot(orth);
                     var proY = relPos.dot(d);
                     
                     myGL.drawUI(gameState.graveImageUI,
@@ -373,7 +507,7 @@ function drawMap() {
                 var relPos = obj.position.posVec().minus(gameState.playerLocation());
                 var dist=relPos.mag();
                 relPos = relPos.normalize().scale((Math.min(14,dist)/15)*gameState.mapSize/2);
-                var proX = relPos.dot(orth);
+                var proX = -relPos.dot(orth);
                 var proY = relPos.dot(d);
                 
                 myGL.drawUI(gameState.ghostImageUI,
@@ -383,7 +517,10 @@ function drawMap() {
             }
         }
     }
-    myGL.drawText("hello world");
+    else {
+		myGL.drawUI(gameState.mapImageBUI,gameState.mapX,gameState.mapY,gameState.mapSize,gameState.mapSize);
+	}
+    myGL.drawText("Level: "+(gameState.currentLevel+1));
 }
     
 
@@ -449,7 +586,7 @@ function webGLStart() {
         {
             if (gameState.solidObjects.hasOwnProperty(ele) && gameState.solidObjects[ele]!=null) {
                 var vec = gameState.camera.collisionCheck(gameState.solidObjects[ele],moveVec);
-                if (vec != null) {
+                if (vec != null && !gameState.invincible) {
                     moveVec = (vec.cross(gameState.camera.up)).scale(moveVec.dot(vec.cross(gameState.camera.up)));
                 }
             }
@@ -467,8 +604,8 @@ function webGLStart() {
         
         
         //rotation (aiming)
-        var mHorz = 2*dmag*Math.sin(gameState.camera.rotSpeed*stick2x);
-        var mVert = 2*dmag*Math.sin(gameState.camera.rotSpeed*stick2y);
+        var mHorz = elapsed*dmag*Math.sin(gameState.camera.rotSpeed*stick2x)/8.0;
+        var mVert = elapsed*dmag*Math.sin(gameState.camera.rotSpeed*stick2y)/8.0;
         var dirHorz = horzViewAxis.normalize().scale(mHorz);
         var dirVert = vertViewAxis.normalize().scale(mVert);
         gameState.camera.lookingAt = gameState.camera.lookingAt.plus(dirHorz.plus(dirVert));
@@ -543,19 +680,11 @@ function webGLStart() {
     controller.keyboardUp[55].push( function(elapsed,pressed) {//7
         gameState.removeNearestTree();
     });
-    controller.keyboard[56].push( function(elapsed,pressed) {//8
+    controller.keyboardUp[56].push( function(elapsed,pressed) {//8
+		gameState.invincible= !gameState.invincible;
     });
     controller.keyboardUp[57].push( function(elapsed) {//9
-            myGL.getDepthPre();
-            var perspectiveMat = (new Mat4()).perspective(gameState.camera.fieldOfView,gameState.camera.lookingAt,gameState.camera.lookingFrom,gameState.camera.up);
-            for (ele of gameState.sceneElements) {
-            	drawTexturedObject(ele,perspectiveMat);
-            }
-            //animate(gameState.solidObjects);
-            for (ele of gameState.solidObjects) {
-            	drawTexturedObject(ele,perspectiveMat);
-            }
-            globalDepth = myGL.getDepthPost();
+		gameState.removeNearestGrave();
     });
     controller.keyboardUp[80].push( function(elapsed) {//p
             gameState.saveLevel();
