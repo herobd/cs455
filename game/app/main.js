@@ -417,7 +417,7 @@ gameState.loadLevel = function(loc) {
             
             if (loc == 'rand.level') {
 				myself.makeGoal();
-				myself.makeGraves(myself.currentLevel/400.0);
+				myself.makeGraves(myself.currentLevel/1000.0);
 				myself.makeTrees(myself.currentLevel/50.0);
 			}
           } else {
@@ -536,6 +536,7 @@ function drawMap() {
 		myGL.drawUI(gameState.mapImageBUI,gameState.mapX,gameState.mapY,gameState.mapSize,gameState.mapSize);
 	}
     myGL.drawText("Level: "+(gameState.currentLevel+1));
+    //myGL.drawText("mouse: "+(controller.mouseX)+', '+(controller.mouseX));
 }
     
 
@@ -655,8 +656,8 @@ function webGLStart() {
         
         
         //rotation (aiming)
-        var mHorz = elapsed*dmag*Math.sin(gameState.camera.rotSpeed*stick2x)/8.0;
-        var mVert = elapsed*dmag*Math.sin(gameState.camera.rotSpeed*stick2y)/8.0;
+        var mHorz = elapsed*dmag*Math.sin(gameState.camera.rotSpeed*stick2x)/7.0;
+        var mVert = elapsed*dmag*Math.sin(gameState.camera.rotSpeed*stick2y)/7.0;
         var dirHorz = horzViewAxis.normalize().scale(mHorz);
         var dirVert = vertViewAxis.normalize().scale(mVert);
         gameState.camera.lookingAt = gameState.camera.lookingAt.plus(dirHorz.plus(dirVert));

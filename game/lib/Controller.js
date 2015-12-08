@@ -25,6 +25,15 @@ define( function() {
         currentlyPressedKeys : {},
         currentlyReleasedKeys : {},
         
+        windowWidth : 500,
+        windowHeight : 500,
+        mouseX : 0,
+        mouseY : 0,
+        handleMouseMove : function (event) {
+            this.mouseX = event.clientX;
+            this.mouseY = event.clientY;
+        },
+        
         onTick : function(elapsed) {
 			var gamePads=navigator.getGamepads();
             var gamepad = undefined;
@@ -35,13 +44,17 @@ define( function() {
 			}
     
             var cind = document.getElementById("cind");
+            
+            var stickLx=0;
+            var stickLy = 0;
+            var stickRx = 0;
+            var stickRy = 0;
+            var noiseThresh = 0.07;
+            
             if (gamepad !== undefined && gamepad !== null) {
                 this.hideGamePadMessage(gamepad.id);
                 
-                var stickLx=0;
-                var stickLy = 0;
-                var stickRx = 0;
-                var stickRy = 0;
+                
                 
                 var dPadU = false;
                 var dPadD = false;
@@ -52,6 +65,8 @@ define( function() {
                 var buttonS = false;
                 var buttonE = false;
                 var buttonW = false;
+
+                
                 
                 /*for (var i=0; i<gamepad.axes.length; i++) {
 	                if (gamepad.axes[i] !== 0 && Math.abs(gamepad.axes[i]) < 0.1) {
@@ -65,16 +80,16 @@ define( function() {
                     stickRx = -gamepad.axes[2];
                     stickRy = -gamepad.axes[3];
                     
-                    if (stickLx !== 0 && Math.abs(stickLx) < 0.05) {
+                    if (stickLx !== 0 && Math.abs(stickLx) < noiseThresh) {
 	                    stickLx=0;
 	                }
-	                if (stickLy !== 0 && Math.abs(stickLy) < 0.05) {
+	                if (stickLy !== 0 && Math.abs(stickLy) < noiseThresh) {
 	                    stickLy=0;
 	                }
-	                if (stickRx !== 0 && Math.abs(stickRx) < 0.05) {
+	                if (stickRx !== 0 && Math.abs(stickRx) < noiseThresh) {
 	                    stickRx=0;
 	                }
-	                if (stickRy !== 0 && Math.abs(stickRy) < 0.05) {
+	                if (stickRy !== 0 && Math.abs(stickRy) < noiseThresh) {
 	                    stickRy=0;
 	                }
                     
@@ -99,16 +114,16 @@ define( function() {
                     stickRx = -gamepad.axes[4];
                     stickRy = -gamepad.axes[2];
                     
-                    if (stickLx !== 0 && Math.abs(stickLx) < 0.05) {
+                    if (stickLx !== 0 && Math.abs(stickLx) < noiseThresh) {
 	                    stickLx=0;
 	                }
-	                if (stickLy !== 0 && Math.abs(stickLy) < 0.05) {
+	                if (stickLy !== 0 && Math.abs(stickLy) < noiseThresh) {
 	                    stickLy=0;
 	                }
-	                if (stickRx !== 0 && Math.abs(stickRx) < 0.05) {
+	                if (stickRx !== 0 && Math.abs(stickRx) < noiseThresh) {
 	                    stickRx=0;
 	                }
-	                if (stickRy !== 0 && Math.abs(stickRy) < 0.05) {
+	                if (stickRy !== 0 && Math.abs(stickRy) < noiseThresh) {
 	                    stickRy=0;
 	                }
                     
@@ -128,16 +143,16 @@ define( function() {
                     stickRx = -gamepad.axes[2];
                     stickRy = -gamepad.axes[3];
                     
-                    if (stickLx !== 0 && Math.abs(stickLx) < 0.05) {
+                    if (stickLx !== 0 && Math.abs(stickLx) < noiseThresh) {
 	                    stickLx=0;
 	                }
-	                if (stickLy !== 0 && Math.abs(stickLy) < 0.05) {
+	                if (stickLy !== 0 && Math.abs(stickLy) < noiseThresh) {
 	                    stickLy=0;
 	                }
-	                if (stickRx !== 0 && Math.abs(stickRx) < 0.05) {
+	                if (stickRx !== 0 && Math.abs(stickRx) < noiseThresh) {
 	                    stickRx=0;
 	                }
-	                if (stickRy !== 0 && Math.abs(stickRy) < 0.05) {
+	                if (stickRy !== 0 && Math.abs(stickRy) < noiseThresh) {
 	                    stickRy=0;
 	                }
                     
@@ -159,9 +174,7 @@ define( function() {
                 }
                 /////////////////////////
                 
-                for (var todo of this.stickL) {todo(elapsed,stickLx,stickLy);}
-                for (var todo of this.stickR) {todo(elapsed,stickRx,stickRy);}
-                for (var todo of this.stickLR) {todo(elapsed,stickLx,stickLy,stickRx,stickRy);}
+                
                 for (var todo of this.dPad) {todo(elapsed,dPadU,dPadD,dPadL,dPadR);}
                 for (var todo of this.buttonN) {todo(elapsed,buttonN);}
                 for (var todo of this.buttonS) {todo(elapsed,buttonS);}
@@ -183,7 +196,25 @@ define( function() {
 
             } else {
                 this.showGamePadMessage();
+                stickRx = -(this.mouseX-this.windowWidth/2.0)/(this.windowWidth/2.0);
+                stickRy = -(this.mouseY-this.windowHeight/2.0)/(this.windowHeight/2.0);
+                
+                if (stickLx !== 0 && Math.abs(stickLx) < noiseThresh) {
+                    stickLx=0;
+                }
+                if (stickLy !== 0 && Math.abs(stickLy) < noiseThresh) {
+                    stickLy=0;
+                }
+                if (stickRx !== 0 && Math.abs(stickRx) < noiseThresh) {
+                    stickRx=0;
+                }
+                if (stickRy !== 0 && Math.abs(stickRy) < noiseThresh) {
+                    stickRy=0;
+                }
             }
+            for (var todo of this.stickL) {todo(elapsed,stickLx,stickLy);}
+            for (var todo of this.stickR) {todo(elapsed,stickRx,stickRy);}
+            for (var todo of this.stickLR) {todo(elapsed,stickLx,stickLy,stickRx,stickRy);}
             
             for (var key=0; key<256; key++) {
                 //console.log(this.keyboard[key]);
@@ -204,9 +235,12 @@ define( function() {
       controller.currentlyPressedKeys[event.keyCode] = false;
       controller.currentlyReleasedKeys[event.keyCode] = true;
     }
+    handleMouseMove = function (event) {
+      controller.handleMouseMove(event);
+    }
     document.onkeydown = handleKeyDown;
     document.onkeyup = handleKeyUp;
-    
+    document.onmousemove = handleMouseMove;
     
     return controller
 });
